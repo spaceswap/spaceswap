@@ -73,7 +73,7 @@ contract Interstellar is Ownable {
     PoolInfo[] public poolInfo;
     // Info of each user that stakes LP tokens.
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
-    // Total allocation poitns. Must be the sum of all allocation points in all pools.
+    // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // The block number when MILK mining starts.
     uint256 public startBlock;
@@ -169,7 +169,7 @@ contract Interstellar is Ownable {
         return user.amount.mul(accMilkPerShare).div(1e12).sub(user.rewardDebt);
     }
 
-    // Update reward vairables for all pools. Be careful of gas spending!
+    // Update reward variables for all pools. Be careful of gas spending!
     function massUpdatePools() public {
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
@@ -203,10 +203,14 @@ contract Interstellar is Ownable {
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 pending = user.amount.mul(pool.accMilkPerShare).div(1e12).sub(user.rewardDebt);
-            safeMilkTransfer(msg.sender, pending);
+            if(pending > 0) {
+                safeMilkTransfer(msg.sender, pending);
+            }
         }
-        pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
-        user.amount = user.amount.add(_amount);
+        if(_amount > 0) {
+            pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+            user.amount = user.amount.add(_amount);
+        }
         user.rewardDebt = user.amount.mul(pool.accMilkPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
     }
@@ -218,10 +222,14 @@ contract Interstellar is Ownable {
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
         uint256 pending = user.amount.mul(pool.accMilkPerShare).div(1e12).sub(user.rewardDebt);
-        safeMilkTransfer(msg.sender, pending);
-        user.amount = user.amount.sub(_amount);
+        if(pending > 0) {
+            safeMilkTransfer(msg.sender, pending);
+        }
+        if(_amount > 0) {
+             user.amount = user.amount.sub(_amount);
+             pool.lpToken.safeTransfer(address(msg.sender), _amount);
+        }
         user.rewardDebt = user.amount.mul(pool.accMilkPerShare).div(1e12);
-        pool.lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
