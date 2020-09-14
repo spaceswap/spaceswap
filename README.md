@@ -3,3 +3,20 @@
 Interstellar   https://etherscan.io/address/0x0a19e8a8a26d6d705c8da26eb9207047d07f3bb4#code		
 MilkyWay Token https://etherscan.io/address/0x66d1b01c0fd7c2d8718f0997494b53ff5c485688#code		 
 TimeLock       https://etherscan.io/address/0x1e2a70bebb3b75de5cae81440b03922d199c4bd0#code		
+
+
+
+##For TimeLock
+####Set
+queueTransactions
+target:
+0x9e0b8f7520e5edf8ae442254a82a1b41eb759111
+value:
+set(uint256,uint256,bool)
+signature:
+set(uint256,uint256,bool)
+data:
+0x0000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000000
+eta:
+
+####add
