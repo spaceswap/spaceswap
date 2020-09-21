@@ -7,10 +7,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./MilkyWayToken.sol";
 
-// Interstellar is the master of Laika. He can make Laika and he is a fair guy.
+// Interstellar is the master of Milk. He can make Milk and he is a fair guy.
 //
 // Note that it's ownable and the owner wields tremendous power. The ownership
-// will be transferred to a governance smart contract once Laika is sufficiently
+// will be transferred to a governance smart contract once Milk is sufficiently
 // distributed and the community can show to govern itself.
 //
 // Have fun reading it. Hopefully it's bug-free. God bless.
@@ -89,18 +89,15 @@ contract Interstellar is Ownable {
         MilkyWayToken _milk,
         address _devAddr,
         uint256 _milkPerBlock, // 2000000000000000000
-        uint256 _startFirstPhaseBlock, // 0
-        uint256 _startSecondPhaseBlock, // 10,000
-        uint256 _startThirdPhaseBlock, // 40,000
-        uint256 _bonusEndBlock // 100,000
+        uint256 _startFirstPhaseBlock // 0
     ) public {
         milk = _milk;
         devAddr = _devAddr;
         milkPerBlock = _milkPerBlock;
         startFirstPhaseBlock = _startFirstPhaseBlock;
-        startSecondPhaseBlock = _startSecondPhaseBlock;
-        startThirdPhaseBlock = _startThirdPhaseBlock;
-        bonusEndBlock = _bonusEndBlock;
+        startSecondPhaseBlock = startFirstPhaseBlock.add(10000);
+        startThirdPhaseBlock = startSecondPhaseBlock.add(30000);
+        bonusEndBlock = startThirdPhaseBlock.add(60000);
     }
 
     function poolLength() external view returns (uint256) {
@@ -135,14 +132,17 @@ contract Interstellar is Ownable {
 
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-        if (_to <= startSecondPhaseBlock) { // 0
-            return _to.sub(_from).mul(BONUS_MULTIPLIER_1);
+        if (_to <= startFirstPhaseBlock) { // 0
+            return  _to.sub(_from); // x1
         }
-        else if (_to <= startThirdPhaseBlock) { // + 10,000 blocks
-            return _to.sub(_from).mul(BONUS_MULTIPLIER_2);
+        else if (_to <= startSecondPhaseBlock) { // + 10,000 blocks
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_1); // x20
+        }
+        else if (_to <= startThirdPhaseBlock) { // + 40,000 blocks
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_2); //x10
         }
         else if (_to <= bonusEndBlock) { // + 40,000 blocks
-            return _to.sub(_from).mul(BONUS_MULTIPLIER_3);
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_3); // x5
         }
         else if (_from >= bonusEndBlock) { // + 100,000 blocks
             return _to.sub(_from);
