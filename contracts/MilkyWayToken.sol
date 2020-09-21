@@ -6,13 +6,36 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 // MilkyWayToken with Governance.
 contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
 
+    address private _blender;
+    /**
+     * @dev Returns the address of the current blender.
+     */
+    function blender() public view returns (address) {
+        return _blender;
+    }
+
+    function setBlender(address newBlender) public virtual onlyOwner {
+        require(newBlender != address(0), "Ownable: new blender is the zero address");
+        _blender = newBlender;
+    }
+
+
+    /**
+     * @dev Throws if called by any account other than the blender.
+     */
+    modifier onlyBlender() {
+        require(_blender == _msgSender(), "Blender: caller is not the blender");
+        _;
+    }
+
     /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (todo Name).
-    function mint(address _to, uint256 _amount) public onlyOwner {
+    function mint(address _to, uint256 _amount) public onlyBlender {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
     }
 
-    function burn(address _to, uint256 _amount) public onlyOwner {
+    /// @notice Creates `_amount` token to `_to`. Must only be called by the blender (todo Name).
+    function burn(address _to, uint256 _amount) public onlyBlender {
         _burn(_to, _amount);
         _moveDelegates(_delegates[_to], address(0), _amount);
     }

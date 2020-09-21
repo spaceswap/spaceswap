@@ -1089,13 +1089,36 @@ pragma solidity 0.6.12;
 // MilkyWayToken with Governance.
 contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
 
+    address private _blender;
+    /**
+     * @dev Returns the address of the current blender.
+     */
+    function blender() public view returns (address) {
+        return _blender;
+    }
+
+    function setBlender(address newBlender) public virtual onlyOwner {
+        require(newBlender != address(0), "Ownable: new blender is the zero address");
+        _blender = newBlender;
+    }
+
+
+    /**
+     * @dev Throws if called by any account other than the blender.
+     */
+    modifier onlyBlender() {
+        require(_blender == _msgSender(), "Blender: caller is not the blender");
+        _;
+    }
+
     /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (todo Name).
-    function mint(address _to, uint256 _amount) public onlyOwner {
+    function mint(address _to, uint256 _amount) public onlyBlender {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
     }
 
-    function burn(address _to, uint256 _amount) public onlyOwner {
+    /// @notice Creates `_amount` token to `_to`. Must only be called by the blender (todo Name).
+    function burn(address _to, uint256 _amount) public onlyBlender {
         _burn(_to, _amount);
         _moveDelegates(_delegates[_to], address(0), _amount);
     }
@@ -1327,8 +1350,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
         assembly { chainId := chainid() }
         return chainId;
     }
-}
-// Interstellar is the master of MILKIWAY. He can make MILKIWAY and he is a fair guy.
+}// Interstellar is the master of MILKIWAY. He can make MILKIWAY and he is a fair guy.
 //
 // Note that it's ownable and the owner wields tremendous power. The ownership
 // will be transferred to a governance smart contract once MILKIWAY is sufficiently
@@ -1375,6 +1397,12 @@ contract Interstellar is Ownable {
 
     // The block number when MILK mining starts.
     uint256 public startFirstPhaseBlock;
+
+    // The block number when MILK mining starts.
+    uint256 public startSecondPhaseBlock;
+
+    // The block number when MILK mining starts.
+    uint256 public startThirdPhaseBlock;
 
     // Block number when bonus MILK period ends.
     uint256 public bonusEndBlock;
@@ -1428,7 +1456,7 @@ contract Interstellar is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        uint256 lastRewardBlock = block.number > _startFirstPhaseBlock ? block.number : _startFirstPhaseBlock;
+        uint256 lastRewardBlock = block.number > startFirstPhaseBlock ? block.number : startFirstPhaseBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolInfo.push(PoolInfo({
         lpToken: _lpToken,
@@ -1463,7 +1491,7 @@ contract Interstellar is Ownable {
             return _to.sub(_from);
         }
         else {
-            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
+            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER_1).add( // todo ????
                 _to.sub(bonusEndBlock)
             );
         }

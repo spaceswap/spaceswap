@@ -55,6 +55,12 @@ contract Interstellar is Ownable {
     // The block number when MILK mining starts.
     uint256 public startFirstPhaseBlock;
 
+    // The block number when MILK mining starts.
+    uint256 public startSecondPhaseBlock;
+
+    // The block number when MILK mining starts.
+    uint256 public startThirdPhaseBlock;
+
     // Block number when bonus MILK period ends.
     uint256 public bonusEndBlock;
 
@@ -107,7 +113,7 @@ contract Interstellar is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        uint256 lastRewardBlock = block.number > _startFirstPhaseBlock ? block.number : _startFirstPhaseBlock;
+        uint256 lastRewardBlock = block.number > startFirstPhaseBlock ? block.number : startFirstPhaseBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolInfo.push(PoolInfo({
         lpToken: _lpToken,
@@ -142,7 +148,7 @@ contract Interstellar is Ownable {
             return _to.sub(_from);
         }
         else {
-            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
+            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER_1).add( // todo ????
                 _to.sub(bonusEndBlock)
             );
         }
