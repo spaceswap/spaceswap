@@ -712,7 +712,6 @@ abstract contract Context {
 // File: @openzeppelin/contracts/access/Ownable.sol
 
 
-
 pragma solidity ^0.6.0;
 
 /**
@@ -1082,14 +1081,47 @@ contract ERC20 is Context, IERC20 {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }
 
+
+pragma solidity 0.6.12;
+
+contract GovernanceContract is Ownable {
+
+  mapping(address => bool) public governanceContracts;
+
+  event GovernanceContractAdded(address addr);
+  event GovernanceContractRemoved(address addr);
+
+  modifier onlyGovernanceContracts() {
+    require(governanceContracts[msg.sender]);
+    _;
+  }
+
+
+  function addAddressToGovernanceContract(address addr) onlyOwner public returns(bool success) {
+    if (!governanceContracts[addr]) {
+      governanceContracts[addr] = true;
+      emit GovernanceContractAdded(addr);
+      success = true;
+    }
+  }
+
+
+  function removeAddressFromGovernanceContract(address addr) onlyOwner public returns(bool success) {
+    if (governanceContracts[addr]) {
+      governanceContracts[addr] = false;
+      emit GovernanceContractRemoved(addr);
+      success = true;
+    }
+  }
+}
+
+
 // File: contracts/MilkyWayToken.sol
 
 pragma solidity 0.6.12;
 
 // MilkyWayToken with Governance.
-contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
-
-    address private _blender;
+contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
 
     uint256 private _totalBurned;
 
@@ -1100,34 +1132,15 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
         return _totalBurned;
     }
 
-    /**
-     * @dev Returns the address of the current blender.
-     */
-    function blender() public view returns (address) {
-        return _blender;
-    }
 
-    function setBlender(address newBlender) public virtual onlyOwner {
-        require(newBlender != address(0), "Ownable: new blender is the zero address");
-        _blender = newBlender;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the blender.
-     */
-    modifier onlyBlender() {
-        require(_blender == _msgSender(), "Blender: caller is not the blender");
-        _;
-    }
-
-    /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (todo Name).
-    function mint(address _to, uint256 _amount) public onlyBlender {
+    /// @notice Creates `_amount` token to `_to`. Must only be called by the  Governance Contracts
+    function mint(address _to, uint256 _amount) public onlyGovernanceContracts {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
     }
 
-    /// @notice Creates `_amount` token to `_to`. Must only be called by the blender (todo Name).
-    function burn(address _to, uint256 _amount) public onlyBlender {
+    // @notice Creates `_amount` token to `_to`. Must only be called by the Governance Contracts
+    function burn(address _to, uint256 _amount) public onlyGovernanceContracts {
         _burn(_to, _amount);
         _totalBurned = _totalBurned.add(_amount);
         _moveDelegates(_delegates[_to], address(0), _amount);
@@ -1139,7 +1152,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
     // Which is copied and modified from COMPOUND:
     // https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
 
-    /// @notice A record of each accounts delegate
+    // @notice A record of each accounts delegate
     mapping (address => address) internal _delegates;
 
     /// @notice A checkpoint for marking number of votes from a given block
