@@ -53,7 +53,7 @@ contract Interstellar is Ownable {
     uint256 public milkPerBlock; // 2
 
     // The block number when MILK mining starts.
-    uint256 public startBlock;
+    uint256 public startFirstPhaseBlock;
 
     // Block number when bonus MILK period ends.
     uint256 public bonusEndBlock;
@@ -85,14 +85,16 @@ contract Interstellar is Ownable {
         uint256 _milkPerBlock, // 2000000000000000000
         uint256 _startFirstPhaseBlock, // 0
         uint256 _startSecondPhaseBlock, // 10,000
-        uint256 __startThirdPhaseBlock, // 40,000
+        uint256 _startThirdPhaseBlock, // 40,000
         uint256 _bonusEndBlock // 100,000
     ) public {
         milk = _milk;
         devAddr = _devAddr;
         milkPerBlock = _milkPerBlock;
+        startFirstPhaseBlock = _startFirstPhaseBlock;
+        startSecondPhaseBlock = _startSecondPhaseBlock;
+        startThirdPhaseBlock = _startThirdPhaseBlock;
         bonusEndBlock = _bonusEndBlock;
-        startBlock = _startBlock;
     }
 
     function poolLength() external view returns (uint256) {
@@ -105,7 +107,7 @@ contract Interstellar is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+        uint256 lastRewardBlock = block.number > _startFirstPhaseBlock ? block.number : _startFirstPhaseBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolInfo.push(PoolInfo({
         lpToken: _lpToken,
@@ -127,11 +129,19 @@ contract Interstellar is Ownable {
 
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-        if (_to <= bonusEndBlock) {
-            return _to.sub(_from).mul(BONUS_MULTIPLIER);
-        } else if (_from >= bonusEndBlock) {
+        if (_to <= startSecondPhaseBlock) { // 0
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_1);
+        }
+        else if (_to <= startThirdPhaseBlock) { // + 10,000 blocks
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_2);
+        }
+        else if (_to <= bonusEndBlock) { // + 40,000 blocks
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_3);
+        }
+        else if (_from >= bonusEndBlock) { // + 100,000 blocks
             return _to.sub(_from);
-        } else {
+        }
+        else {
             return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
                 _to.sub(bonusEndBlock)
             );

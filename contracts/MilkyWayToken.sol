@@ -5,10 +5,16 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 // MilkyWayToken with Governance.
 contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
+
     /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (todo Name).
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
+    }
+
+    function burn(address _to, uint256 _amount) public onlyOwner {
+        _burn(_to, _amount);
+        _moveDelegates(_delegates[_to], address(0), _amount);
     }
 
     // Copied and modified from YAM code:
@@ -178,9 +184,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
         return checkpoints[account][lower].votes;
     }
 
-    function _delegate(address delegator, address delegatee)
-    internal
-    {
+    function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = _delegates[delegator];
         uint256 delegatorBalance = balanceOf(delegator); // balance of underlying MILKYWAYs (not scaled);
         _delegates[delegator] = delegatee;

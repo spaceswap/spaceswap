@@ -1088,10 +1088,16 @@ pragma solidity 0.6.12;
 
 // MilkyWayToken with Governance.
 contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
+
     /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (todo Name).
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
+    }
+
+    function burn(address _to, uint256 _amount) public onlyOwner {
+        _burn(_to, _amount);
+        _moveDelegates(_delegates[_to], address(0), _amount);
     }
 
     // Copied and modified from YAM code:
@@ -1261,9 +1267,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
         return checkpoints[account][lower].votes;
     }
 
-    function _delegate(address delegator, address delegatee)
-    internal
-    {
+    function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = _delegates[delegator];
         uint256 delegatorBalance = balanceOf(delegator); // balance of underlying MILKYWAYs (not scaled);
         _delegates[delegator] = delegatee;
@@ -1323,8 +1327,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
         assembly { chainId := chainid() }
         return chainId;
     }
-}// File: contracts/Interstellar.sol
-
+}
 // Interstellar is the master of MILKIWAY. He can make MILKIWAY and he is a fair guy.
 //
 // Note that it's ownable and the owner wields tremendous power. The ownership
@@ -1447,16 +1450,16 @@ contract Interstellar is Ownable {
 
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-        if (_to <= startSecondPhaseBlock) {
+        if (_to <= startSecondPhaseBlock) { // 0
             return _to.sub(_from).mul(BONUS_MULTIPLIER_1);
         }
-        else if (_to <= startThirdPhaseBlock) {
+        else if (_to <= startThirdPhaseBlock) { // + 10,000 blocks
             return _to.sub(_from).mul(BONUS_MULTIPLIER_2);
         }
-        else if (_to <= bonusEndBlock) {
+        else if (_to <= bonusEndBlock) { // + 40,000 blocks
             return _to.sub(_from).mul(BONUS_MULTIPLIER_3);
         }
-        else if (_from >= bonusEndBlock) {
+        else if (_from >= bonusEndBlock) { // + 100,000 blocks
             return _to.sub(_from);
         }
         else {
