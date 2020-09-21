@@ -1090,6 +1090,16 @@ pragma solidity 0.6.12;
 contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
 
     address private _blender;
+
+    uint256 private _totalBurned;
+
+    /**
+     * @dev See {IERC20-totalSupply}.
+     */
+    function totalBurned() public view returns (uint256) {
+        return _totalBurned;
+    }
+
     /**
      * @dev Returns the address of the current blender.
      */
@@ -1101,7 +1111,6 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
         require(newBlender != address(0), "Ownable: new blender is the zero address");
         _blender = newBlender;
     }
-
 
     /**
      * @dev Throws if called by any account other than the blender.
@@ -1120,6 +1129,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
     /// @notice Creates `_amount` token to `_to`. Must only be called by the blender (todo Name).
     function burn(address _to, uint256 _amount) public onlyBlender {
         _burn(_to, _amount);
+        _totalBurned = _totalBurned.add(_amount);
         _moveDelegates(_delegates[_to], address(0), _amount);
     }
 
