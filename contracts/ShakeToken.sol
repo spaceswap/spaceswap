@@ -597,25 +597,19 @@ contract ERC20 is  IERC20 {
  *
  */
 contract ShakeERC20 is  ERC20, MinterRole {
-    uint256 public immutable MAX_TOTOAL_SUPPLY;
+    uint256 public immutable MAX_TOTAL_SUPPLY;
 
     uint256 public totalMinted = 0;
     uint256 public totalBurned = 0;
 
-    
-    /**
-     * @dev Please specify the following parametrs when deploying:  
-     * `name` - full token name
-     * `symbol`  - token ticket 
-     * `maxSupply`  - amount of tokens totalSupply that may exist (!!! without decimals !!!)
-     */ 
     constructor(
         string memory name, string memory symbol, uint256 maxSupply 
     ) public  
       ERC20(name, symbol)
+      //ERC20Mintable(address(msg.sender))
       MinterRole(address(msg.sender))
     { 
-        MAX_TOTOAL_SUPPLY = maxSupply*10**18;
+        MAX_TOTAL_SUPPLY = maxSupply*10**18;
     }
 
     /**
@@ -625,7 +619,7 @@ contract ShakeERC20 is  ERC20, MinterRole {
      * @return A boolean that indicates if the operation was successful.
      */
     function mint(address to, uint256 value) public onlyMinter returns (bool) {
-        require(totalSupply().add(value) <= MAX_TOTOAL_SUPPLY, "Can`t mint more than MAX_TOTOAL_SUPPLY");
+        require(totalSupply().add(value) <= MAX_TOTAL_SUPPLY, "Can`t mint more than MAX_TOTOAL_SUPPLY");
         _mint(to, value);
         totalMinted = totalMinted.add(value);
         return true;
