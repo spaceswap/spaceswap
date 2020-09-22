@@ -267,6 +267,7 @@ contract Blender {
         SHAKE_ADDRESS    = _shakeAddress;
         currShakePrice   = SHAKE_PRICE_START;
         START_FROM_BLOCK = _startFromBlock;
+        END_AT_BLOCK     = _endAtBlock;
     }
     
     function getOneShake() external {
