@@ -238,12 +238,14 @@ interface IERC20 {
 }
 
 
-
-contract Blender {
+/**
+ * @title Blender is exchange contract for MILK2 <=> SHAKE tokens
+ *
+ * @dev Dont't forget permit mint and burn in tokent contracts 
+ */contract Blender {
     using SafeMath for uint256;
     
-    uint256 public constant SHAKE_PRICE_START = 1000*10**18;//MILK2
-    uint256 public constant SHAKE_PRICE_STEP  =   10*10**18;  //MILK2
+    uint256 public constant  SHAKE_PRICE_STEP = 10*10**18;  //MILK2
     
     address public immutable MILK_ADDRESS;
     address public immutable SHAKE_ADDRESS;
@@ -252,40 +254,68 @@ contract Blender {
     
     uint256 public currShakePrice;
     
-    
+    /**
+     * @dev Sets the values for {MILK_ADDRESS}, {SHAKE_ADDRESS}
+     * {START_FROM_BLOCK} and {END_AT_BLOCK}, initializes {currShakePrice} with
+     * a default value of 18.
+     */ 
     constructor (
         address _milkAddress,
         address _shakeAddress,
-        uint32 _startFromBlock,
-        uint32 _endAtBlock
+        uint32  _startFromBlock,
+        uint32  _endAtBlock
     )
-    
     public
-    
     {
         MILK_ADDRESS     = _milkAddress;
         SHAKE_ADDRESS    = _shakeAddress;
-        currShakePrice   = SHAKE_PRICE_START;
+        currShakePrice   = 1000*10**18; //MILK2
         START_FROM_BLOCK = _startFromBlock;
         END_AT_BLOCK     = _endAtBlock;
     }
     
+    /**
+     * @dev Just exchage your MILK2 for one(1) SHAKE.
+     * Caller must have MILK2 on his/her balance, see `currShakePrice`
+     * Each call will increase SHAKE price with one step, see `SHAKE_PRICE_STEP`.
+     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
+     *
+     * Function can be called after `START_FROM_BLOCK` and before `START_FROM_BLOCK`
+     */
     function getOneShake() external {
-        require(block.number >= START_FROM_BLOCK);
+        require(block.number >= START_FROM_BLOCK, "Please wait for start block");
+        require(block.number < END_AT_BLOCK, "Sorry, it's too late");
+
         IERC20 milk2Token = IERC20(MILK_ADDRESS);
+
         require(milk2Token.balanceOf(msg.sender) >= currShakePrice, "There is no enough MILK2");
-        require(milk2Token.burn(msg.sender, currShakePrice), "Cant burn your MILK2");
+        require(milk2Token.burn(msg.sender, currShakePrice), "Can't burn your MILK2");
+        
         IERC20 shakeToken = IERC20(SHAKE_ADDRESS);
         currShakePrice  = currShakePrice.add(SHAKE_PRICE_STEP);
         shakeToken.mint(msg.sender, 1*10**18);
         
     }
     
+    /**
+     * @dev Just exchage your SHAKE for MILK2.
+     * Caller must have SHAKE on his/her balance.
+     * `_amount` is amount of user's SHAKE that he/she want burn for get MILK2 
+     * Note that one need use `_amount` without decimals.
+     * 
+     * Note that MILK2 amount will calculate from the reduced by one step `currShakePrice`
+     *
+     * Function can be called after `START_FROM_BLOCK` and before `START_FROM_BLOCK`
+     */
     function getMilkForShake(uint16 _amount) external {
-        require(block.number >= START_FROM_BLOCK);
+        require(block.number >= START_FROM_BLOCK, "Please wait for start block");
+        require(block.number < END_AT_BLOCK, "Sorry, it's too late");
+
         IERC20 shakeToken = IERC20(SHAKE_ADDRESS);
+        
         require(shakeToken.balanceOf(msg.sender) >= uint256(_amount)*10**18, "There is no enough SHAKE");
-        require(shakeToken.burn(msg.sender, uint256(_amount)*10**18), "Cant burn your SHAKE");
+        require(shakeToken.burn(msg.sender, uint256(_amount)*10**18), "Can't burn your SHAKE");
+        
         IERC20 milk2Token = IERC20(MILK_ADDRESS);
         milk2Token.mint(msg.sender, uint256(_amount).mul(currShakePrice.sub(SHAKE_PRICE_STEP)));
         
