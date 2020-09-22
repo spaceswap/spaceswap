@@ -280,7 +280,7 @@ interface IERC20 {
      * Each call will increase SHAKE price with one step, see `SHAKE_PRICE_STEP`.
      * be displayed to a user as `5,05` (`505 / 10 ** 2`).
      *
-     * Function can be called after `START_FROM_BLOCK` and before `START_FROM_BLOCK`
+     * Function can be called after `START_FROM_BLOCK` and before `END_AT_BLOCK`
      */
     function getOneShake() external {
         require(block.number >= START_FROM_BLOCK, "Please wait for start block");
