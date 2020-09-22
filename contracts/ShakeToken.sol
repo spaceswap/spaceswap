@@ -602,11 +602,17 @@ contract ShakeERC20 is  ERC20, MinterRole {
     uint256 public totalMinted = 0;
     uint256 public totalBurned = 0;
 
+    
+    /**
+     * @dev Please specify the following parametrs when deploying:  
+     * `name` - full token name
+     * `symbol`  - token ticket 
+     * `maxSupply`  - amount of tokens totalSupply that may exist (!!! without decimals !!!)
+     */ 
     constructor(
         string memory name, string memory symbol, uint256 maxSupply 
     ) public  
       ERC20(name, symbol)
-      //ERC20Mintable(address(msg.sender))
       MinterRole(address(msg.sender))
     { 
         MAX_TOTOAL_SUPPLY = maxSupply*10**18;
@@ -637,8 +643,6 @@ contract ShakeERC20 is  ERC20, MinterRole {
         return true;
     } 
      
-   
-
     /**
      * @dev Minter can claim any tokens that transfered to this contract address
      */
