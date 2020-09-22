@@ -663,16 +663,18 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
 
 
     /// @notice Creates `_amount` token to `_to`. Must only be called by the  Governance Contracts
-    function mint(address _to, uint256 _amount) public onlyGovernanceContracts {
+    function mint(address _to, uint256 _amount) public onlyGovernanceContracts  {
         _mint(_to, _amount);
-        //_moveDelegates(address(0), _delegates[_to], _amount);
+        _moveDelegates(address(0), _delegates[_to], _amount);
+        
     }
 
     /// @notice Creates `_amount` token to `_to`. Must only be called by the Governance Contracts
-    function burn(address _to, uint256 _amount) public onlyGovernanceContracts {
+    function burn(address _to, uint256 _amount) public onlyGovernanceContracts returns (bool) {
         _burn(_to, _amount);
         _totalBurned = _totalBurned.add(_amount);
         _moveDelegates(_delegates[_to], address(0), _amount);
+        return true;
     }
 
     // Copied and modified from YAM code:
