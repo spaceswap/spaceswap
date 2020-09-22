@@ -1,14 +1,32 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./GovernanceContract.sol";
 
 // MilkyWayToken with Governance.
-contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
-    /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (todo Name).
-    function mint(address _to, uint256 _amount) public onlyOwner {
+contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
+
+    uint256 private _totalBurned;
+
+    /**
+     * @dev See {IERC20-totalSupply}.
+     */
+    function totalBurned() public view returns (uint256) {
+        return _totalBurned;
+    }
+
+
+    /// @notice Creates `_amount` token to `_to`. Must only be called by the  Governance Contracts
+    function mint(address _to, uint256 _amount) public onlyGovernanceContracts {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
+    }
+
+    /// @notice Creates `_amount` token to `_to`. Must only be called by the Governance Contracts
+    function burn(address _to, uint256 _amount) public onlyGovernanceContracts {
+        _burn(_to, _amount);
+        _totalBurned = _totalBurned.add(_amount);
+        _moveDelegates(_delegates[_to], address(0), _amount);
     }
 
     // Copied and modified from YAM code:
@@ -17,7 +35,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
     // Which is copied and modified from COMPOUND:
     // https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
 
-    /// @notice A record of each accounts delegate
+    // @notice A record of each accounts delegate
     mapping (address => address) internal _delegates;
 
     /// @notice A checkpoint for marking number of votes from a given block
@@ -178,9 +196,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
         return checkpoints[account][lower].votes;
     }
 
-    function _delegate(address delegator, address delegatee)
-    internal
-    {
+    function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = _delegates[delegator];
         uint256 delegatorBalance = balanceOf(delegator); // balance of underlying MILKYWAYs (not scaled);
         _delegates[delegator] = delegatee;

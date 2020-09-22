@@ -42,3 +42,12 @@ D2A451FB08C614C73DB446D50BDB38EEDCDAC5FDB9FC9D549AA4D825C99A56A4
 ```
 ####ADD()
 
+## Shake token
+Please specify the following parametrs when deploying:  
+`name` - full token name, for example **SHAKE token V1**  
+`symbol`  - token ticket, for example **SHAKE**  
+`maxSupply`  - amount of tokens totalSupply that may exist (!!! without decimals !!!),
+for example when 10000 will specified then `totalSupply` could be not more then `10000000000000000000000`
+
+## Blender token 
+
