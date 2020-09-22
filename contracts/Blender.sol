@@ -158,87 +158,7 @@ library SafeMath {
     }
 }
 
-/**
- * @title Roles
- * @dev Library for managing addresses assigned to a Role.
- */
-library Roles {
-    struct Role {
-        mapping (address => bool) bearer;
-    }
 
-    /**
-     * @dev give an account access to this role
-     */
-    function add(Role storage role, address account) internal {
-        require(account != address(0));
-        require(!has(role, account));
-
-        role.bearer[account] = true;
-    }
-
-    /**
-     * @dev remove an account's access to this role
-     */
-    function remove(Role storage role, address account) internal {
-        require(account != address(0));
-        require(has(role, account));
-
-        role.bearer[account] = false;
-    }
-
-    /**
-     * @dev check if an account has this role
-     * @return bool
-     */
-    function has(Role storage role, address account) internal view returns (bool) {
-        require(account != address(0));
-        return role.bearer[account];
-    }
-}
-
-contract MinterRole  {
-    using Roles for Roles.Role;
-
-    event MinterAdded(address indexed account);
-    event MinterRemoved(address indexed account);
-
-    Roles.Role private _minters;
-
-    constructor(address sender) public  {
-        if (!isMinter(sender)) {
-            _addMinter(sender);
-        }
-    }
-
-    modifier onlyMinter() {
-        require(isMinter(msg.sender), "MinterRole: caller does not have the Minter role");
-        _;
-    }
-
-    function isMinter(address account) public view returns (bool) {
-        return _minters.has(account);
-    }
-
-    function addMinter(address account) public onlyMinter {
-        _addMinter(account);
-    }
-
-    function renounceMinter() public {
-        _removeMinter(msg.sender);
-    }
-
-    function _addMinter(address account) internal {
-        _minters.add(account);
-        emit MinterAdded(account);
-    }
-
-    function _removeMinter(address account) internal {
-        _minters.remove(account);
-        emit MinterRemoved(account);
-    }
-
-}
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -318,51 +238,84 @@ interface IERC20 {
 }
 
 
-
-contract Blender {
+/**
+ * @title Blender is exchange contract for MILK2 <=> SHAKE tokens
+ *
+ * @dev Dont't forget permit mint and burn in tokent contracts 
+ */contract Blender {
     using SafeMath for uint256;
     
-    //uint256 public constant EXCHANGE_DELTA    = 10*10**18;
-    uint256 public constant SHAKE_PRICE_START = 1000*10**18;//MILK
-    uint256 public constant SHAKE_PRICE_STEP  = 10*10**18;//MILK
+    uint256 public constant  SHAKE_PRICE_STEP = 10*10**18;  //MILK2
     
     address public immutable MILK_ADDRESS;
     address public immutable SHAKE_ADDRESS;
     uint32  public immutable START_FROM_BLOCK;
+    uint32  public immutable END_AT_BLOCK;
     
     uint256 public currShakePrice;
     
+    /**
+     * @dev Sets the values for {MILK_ADDRESS}, {SHAKE_ADDRESS}
+     * {START_FROM_BLOCK} and {END_AT_BLOCK}, initializes {currShakePrice} with
+     * a default value of 18.
+     */ 
     constructor (
         address _milkAddress,
         address _shakeAddress,
-        uint32 _startFromBlock
+        uint32  _startFromBlock,
+        uint32  _endAtBlock
     )
-    
     public
-    
     {
         MILK_ADDRESS     = _milkAddress;
         SHAKE_ADDRESS    = _shakeAddress;
-        currShakePrice   = SHAKE_PRICE_START;
+        currShakePrice   = 1000*10**18; //MILK2
         START_FROM_BLOCK = _startFromBlock;
+        END_AT_BLOCK     = _endAtBlock;
     }
     
+    /**
+     * @dev Just exchage your MILK2 for one(1) SHAKE.
+     * Caller must have MILK2 on his/her balance, see `currShakePrice`
+     * Each call will increase SHAKE price with one step, see `SHAKE_PRICE_STEP`.
+     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
+     *
+     * Function can be called after `START_FROM_BLOCK` and before `START_FROM_BLOCK`
+     */
     function getOneShake() external {
-        require(block.number >= START_FROM_BLOCK);
+        require(block.number >= START_FROM_BLOCK, "Please wait for start block");
+        require(block.number < END_AT_BLOCK, "Sorry, it's too late");
+
         IERC20 milk2Token = IERC20(MILK_ADDRESS);
+
         require(milk2Token.balanceOf(msg.sender) >= currShakePrice, "There is no enough MILK2");
-        require(milk2Token.burn(msg.sender, currShakePrice), "Cant burn your MILK2");
+        require(milk2Token.burn(msg.sender, currShakePrice), "Can't burn your MILK2");
+        
         IERC20 shakeToken = IERC20(SHAKE_ADDRESS);
         currShakePrice  = currShakePrice.add(SHAKE_PRICE_STEP);
         shakeToken.mint(msg.sender, 1*10**18);
         
     }
     
+    /**
+     * @dev Just exchage your SHAKE for MILK2.
+     * Caller must have SHAKE on his/her balance.
+     * `_amount` is amount of user's SHAKE that he/she want burn for get MILK2 
+     * Note that one need use `_amount` without decimals.
+     * 
+     * Note that MILK2 amount will calculate from the reduced by one step `currShakePrice`
+     *
+     * Function can be called after `START_FROM_BLOCK` and before `START_FROM_BLOCK`
+     */
     function getMilkForShake(uint16 _amount) external {
-        require(block.number >= START_FROM_BLOCK);
+        require(block.number >= START_FROM_BLOCK, "Please wait for start block");
+        require(block.number < END_AT_BLOCK, "Sorry, it's too late");
+
         IERC20 shakeToken = IERC20(SHAKE_ADDRESS);
+        
         require(shakeToken.balanceOf(msg.sender) >= uint256(_amount)*10**18, "There is no enough SHAKE");
-        require(shakeToken.burn(msg.sender, uint256(_amount)*10**18), "Cant burn your SHAKE");
+        require(shakeToken.burn(msg.sender, uint256(_amount)*10**18), "Can't burn your SHAKE");
+        
         IERC20 milk2Token = IERC20(MILK_ADDRESS);
         milk2Token.mint(msg.sender, uint256(_amount).mul(currShakePrice.sub(SHAKE_PRICE_STEP)));
         
