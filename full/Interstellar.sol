@@ -712,7 +712,6 @@ abstract contract Context {
 // File: @openzeppelin/contracts/access/Ownable.sol
 
 
-
 pragma solidity ^0.6.0;
 
 /**
@@ -1082,16 +1081,69 @@ contract ERC20 is Context, IERC20 {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }
 
+
+pragma solidity 0.6.12;
+
+contract GovernanceContract is Ownable {
+
+  mapping(address => bool) public governanceContracts;
+
+  event GovernanceContractAdded(address addr);
+  event GovernanceContractRemoved(address addr);
+
+  modifier onlyGovernanceContracts() {
+    require(governanceContracts[msg.sender]);
+    _;
+  }
+
+
+  function addAddressToGovernanceContract(address addr) onlyOwner public returns(bool success) {
+    if (!governanceContracts[addr]) {
+      governanceContracts[addr] = true;
+      emit GovernanceContractAdded(addr);
+      success = true;
+    }
+  }
+
+
+  function removeAddressFromGovernanceContract(address addr) onlyOwner public returns(bool success) {
+    if (governanceContracts[addr]) {
+      governanceContracts[addr] = false;
+      emit GovernanceContractRemoved(addr);
+      success = true;
+    }
+  }
+}
+
+
 // File: contracts/MilkyWayToken.sol
 
 pragma solidity 0.6.12;
 
 // MilkyWayToken with Governance.
-contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
-    /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (todo Name).
-    function mint(address _to, uint256 _amount) public onlyOwner {
+contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
+
+    uint256 private _totalBurned;
+
+    /**
+     * @dev See {IERC20-totalSupply}.
+     */
+    function totalBurned() public view returns (uint256) {
+        return _totalBurned;
+    }
+
+
+    /// @notice Creates `_amount` token to `_to`. Must only be called by the  Governance Contracts
+    function mint(address _to, uint256 _amount) public onlyGovernanceContracts {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
+    }
+
+    // @notice Creates `_amount` token to `_to`. Must only be called by the Governance Contracts
+    function burn(address _to, uint256 _amount) public onlyGovernanceContracts {
+        _burn(_to, _amount);
+        _totalBurned = _totalBurned.add(_amount);
+        _moveDelegates(_delegates[_to], address(0), _amount);
     }
 
     // Copied and modified from YAM code:
@@ -1100,7 +1152,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
     // Which is copied and modified from COMPOUND:
     // https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
 
-    /// @notice A record of each accounts delegate
+    // @notice A record of each accounts delegate
     mapping (address => address) internal _delegates;
 
     /// @notice A checkpoint for marking number of votes from a given block
@@ -1261,9 +1313,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
         return checkpoints[account][lower].votes;
     }
 
-    function _delegate(address delegator, address delegatee)
-    internal
-    {
+    function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = _delegates[delegator];
         uint256 delegatorBalance = balanceOf(delegator); // balance of underlying MILKYWAYs (not scaled);
         _delegates[delegator] = delegatee;
@@ -1323,24 +1373,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK"), Ownable {
         assembly { chainId := chainid() }
         return chainId;
     }
-}// File: contracts/Interstellar.sol
-
-pragma solidity 0.6.12;
-
-interface IMigratorInterstellar {
-    // Perform LP token migration from legacy UniswapV2 to SpaceSwap.
-    // Take the current LP token address and return the new LP token address.
-    // Migrator should have full access to the caller's LP token.
-    // Return the new LP token address.
-    //
-    // XXX Migrator must have allowance access to UniswapV2 LP tokens.
-    // SpaceSwap must mint EXACTLY the same amount of SpaceSwap LP tokens or
-    // else something bad will happen. Traditional UniswapV2 does not
-    // do that so be careful!
-    function migrate(IERC20 token) external returns (IERC20);
-}
-
-// Interstellar is the master of MILKIWAY. He can make MILKIWAY and he is a fair guy.
+}// Interstellar is the master of MILKIWAY. He can make MILKIWAY and he is a fair guy.
 //
 // Note that it's ownable and the owner wields tremendous power. The ownership
 // will be transferred to a governance smart contract once MILKIWAY is sufficiently
@@ -1376,27 +1409,43 @@ contract Interstellar is Ownable {
         uint256 accMilkPerShare; // Accumulated MILKs per share, times 1e12. See below.
     }
 
-    // The MILKIWAY TOKEN!
+    // The MILKIWAY_TOKEN!
     MilkyWayToken public milk;
+
     // Dev address.
-    address public devaddr;
+    address public devAddr;
+
+    // MILK tokens created per block.
+    uint256 public milkPerBlock; // 2
+
+    // The block number when MILK mining starts.
+    uint256 public startFirstPhaseBlock;
+
+    // The block number when MILK mining starts.
+    uint256 public startSecondPhaseBlock;
+
+    // The block number when MILK mining starts.
+    uint256 public startThirdPhaseBlock;
+
     // Block number when bonus MILK period ends.
     uint256 public bonusEndBlock;
-    // MILK tokens created per block.
-    uint256 public milkPerBlock;
-    // Bonus muliplier for early milk makers.
-    uint256 public constant BONUS_MULTIPLIER = 10;
-    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
-    IMigratorInterstellar public migrator;
+
+    // Bonus multiplier for early milk makers.
+    uint256 public constant BONUS_MULTIPLIER_1 = 20; // first 10,000 blocks
+
+    uint256 public constant BONUS_MULTIPLIER_2 = 10; // next 30,000 blocks
+
+    uint256 public constant BONUS_MULTIPLIER_3 = 5; // last 60,000 blocks
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
+
     // Info of each user that stakes LP tokens.
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
-    // Total allocation poitns. Must be the sum of all allocation points in all pools.
+
+    // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
-    // The block number when MILK mining starts.
-    uint256 public startBlock;
+
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -1404,16 +1453,17 @@ contract Interstellar is Ownable {
 
     constructor(
         MilkyWayToken _milk,
-        address _devaddr,
-        uint256 _milkPerBlock,
-        uint256 _startBlock,
-        uint256 _bonusEndBlock
+        address _devAddr,
+        uint256 _milkPerBlock, // 2000000000000000000
+        uint256 _startFirstPhaseBlock // 0
     ) public {
         milk = _milk;
-        devaddr = _devaddr;
+        devAddr = _devAddr;
         milkPerBlock = _milkPerBlock;
-        bonusEndBlock = _bonusEndBlock;
-        startBlock = _startBlock;
+        startFirstPhaseBlock = _startFirstPhaseBlock;
+        startSecondPhaseBlock = startFirstPhaseBlock.add(10000);
+        startThirdPhaseBlock = startSecondPhaseBlock.add(30000);
+        bonusEndBlock = startThirdPhaseBlock.add(60000);
     }
 
     function poolLength() external view returns (uint256) {
@@ -1426,7 +1476,7 @@ contract Interstellar is Ownable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+        uint256 lastRewardBlock = block.number > startFirstPhaseBlock ? block.number : startFirstPhaseBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolInfo.push(PoolInfo({
         lpToken: _lpToken,
@@ -1445,31 +1495,26 @@ contract Interstellar is Ownable {
         poolInfo[_pid].allocPoint = _allocPoint;
     }
 
-    // Set the migrator contract. Can only be called by the owner.
-    function setMigrator(IMigratorInterstellar _migrator) public onlyOwner {
-        migrator = _migrator;
-    }
-
-    // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
-    function migrate(uint256 _pid) public {
-        require(address(migrator) != address(0), "migrate: no migrator");
-        PoolInfo storage pool = poolInfo[_pid];
-        IERC20 lpToken = pool.lpToken;
-        uint256 bal = lpToken.balanceOf(address(this));
-        lpToken.safeApprove(address(migrator), bal);
-        IERC20 newLpToken = migrator.migrate(lpToken);
-        require(bal == newLpToken.balanceOf(address(this)), "migrate: bad");
-        pool.lpToken = newLpToken;
-    }
 
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-        if (_to <= bonusEndBlock) {
-            return _to.sub(_from).mul(BONUS_MULTIPLIER);
-        } else if (_from >= bonusEndBlock) {
+        if (_to <= startFirstPhaseBlock) { // 0
+            return  _to.sub(_from); // x1
+        }
+        else if (_to <= startSecondPhaseBlock) { // + 10,000 blocks
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_1); // x20
+        }
+        else if (_to <= startThirdPhaseBlock) { // + 40,000 blocks
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_2); //x10
+        }
+        else if (_to <= bonusEndBlock) { // + 40,000 blocks
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_3); // x5
+        }
+        else if (_from >= bonusEndBlock) { // + 100,000 blocks
             return _to.sub(_from);
-        } else {
-            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
+        }
+        else {
+            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER_1).add( // todo ????
                 _to.sub(bonusEndBlock)
             );
         }
@@ -1489,7 +1534,7 @@ contract Interstellar is Ownable {
         return user.amount.mul(accMilkPerShare).div(1e12).sub(user.rewardDebt);
     }
 
-    // Update reward vairables for all pools. Be careful of gas spending!
+    // Update reward variables for all pools. Be careful of gas spending!
     function massUpdatePools() public {
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
@@ -1510,7 +1555,7 @@ contract Interstellar is Ownable {
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
         uint256 milkReward = multiplier.mul(milkPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        milk.mint(devaddr, milkReward.mul(3).div(100)); // todo
+        milk.mint(devAddr, milkReward.mul(3).div(100)); // todo
         milk.mint(address(this), milkReward);
         pool.accMilkPerShare = pool.accMilkPerShare.add(milkReward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
@@ -1566,8 +1611,8 @@ contract Interstellar is Ownable {
     }
 
     // Update dev address by the previous dev.
-    function dev(address _devaddr) public {
-        require(msg.sender == devaddr, "dev: wut?");
-        devaddr = _devaddr;
+    function dev(address _devAddr) public {
+        require(msg.sender == devAddr, "dev: wut?");
+        devAddr = _devAddr;
     }
 }
