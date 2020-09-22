@@ -598,6 +598,10 @@ contract ERC20 is  IERC20 {
  */
 contract ShakeERC20 is  ERC20, MinterRole {
     uint256 public immutable MAX_TOTOAL_SUPPLY;
+
+    uint256 public totalMinted = 0;
+    uint256 public totalBurned = 0;
+
     constructor(
         string memory name, string memory symbol, uint256 maxSupply 
     ) public  
@@ -617,6 +621,7 @@ contract ShakeERC20 is  ERC20, MinterRole {
     function mint(address to, uint256 value) public onlyMinter returns (bool) {
         require(totalSupply().add(value) <= MAX_TOTOAL_SUPPLY, "Can`t mint more than MAX_TOTOAL_SUPPLY");
         _mint(to, value);
+        totalMinted = totalMinted.add(value);
         return true;
     } 
 
@@ -628,6 +633,7 @@ contract ShakeERC20 is  ERC20, MinterRole {
      */
     function burn(address to, uint256 value) public onlyMinter returns (bool) {
         _burn(to, value);
+        totalBurned = totalBurned.add(value);
         return true;
     } 
      
