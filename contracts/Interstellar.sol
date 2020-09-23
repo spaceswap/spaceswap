@@ -49,6 +49,10 @@ contract Interstellar is Ownable {
     // Dev address.
     address public devAddr;
 
+
+    // Distribution address.
+    address public distributor;
+
     // MILK tokens created per block.
     uint256 public milkPerBlock; // 2
 
@@ -88,11 +92,13 @@ contract Interstellar is Ownable {
     constructor(
         MilkyWayToken _milk,
         address _devAddr,
+        address _distributor,
         uint256 _milkPerBlock, // 2000000000000000000
         uint256 _startFirstPhaseBlock // 0
     ) public {
         milk = _milk;
         devAddr = _devAddr;
+        distributor = _distributor;
         milkPerBlock = _milkPerBlock;
         startFirstPhaseBlock = _startFirstPhaseBlock;
         startSecondPhaseBlock = startFirstPhaseBlock.add(10000);
@@ -189,7 +195,8 @@ contract Interstellar is Ownable {
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
         uint256 milkReward = multiplier.mul(milkPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        milk.mint(devAddr, milkReward.mul(3).div(100)); // todo
+        milk.mint(devAddr, milkReward.mul(3).div(100)); // 3% developers
+        milk.mint(distributor, milkReward.div(100)); // 1% shakeHolders
         milk.mint(address(this), milkReward);
         pool.accMilkPerShare = pool.accMilkPerShare.add(milkReward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
@@ -248,5 +255,12 @@ contract Interstellar is Ownable {
     function dev(address _devAddr) public {
         require(msg.sender == devAddr, "dev: wut?");
         devAddr = _devAddr;
+    }
+
+
+    // Update distributor address by the previous dev.
+    function updateDistributor(address _distributor) public {
+        require(msg.sender == devAddr, "dev: wut?");
+        distributor = _distributor;
     }
 }

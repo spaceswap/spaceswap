@@ -152,4 +152,11 @@ describe('ShakeERC20', () => {
     
   })
 
+  it('minter burns 0 tokens', async () => {
+    await token.connect(walletMinter).burn(walletShake.address, 0)
+    expect(await token.balanceOf(walletShake.address)).to.eq(AMOUNT_MINT)
+    expect(await token.totalSupply()).to.eq(AMOUNT_MINT)
+    
+  })
+
 })
