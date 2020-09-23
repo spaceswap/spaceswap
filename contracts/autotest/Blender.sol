@@ -257,7 +257,7 @@ interface IERC20 {
     /**
      * @dev Sets the values for {MILK_ADDRESS}, {SHAKE_ADDRESS}
      * {START_FROM_BLOCK} and {END_AT_BLOCK}, initializes {currShakePrice} with
-     * a default value of 18.
+     * a default value of 1000*10**18.
      */ 
     constructor (
         address _milkAddress,
@@ -305,7 +305,7 @@ interface IERC20 {
      * 
      * Note that MILK2 amount will calculate from the reduced by one step `currShakePrice`
      *
-     * Function can be called after `START_FROM_BLOCK` and before `START_FROM_BLOCK`
+     * Function can be called after `START_FROM_BLOCK` and before `END_AT_BLOCK`
      */
     function getMilkForShake(uint16 _amount) external {
         require(block.number >= START_FROM_BLOCK, "Please wait for start block");
