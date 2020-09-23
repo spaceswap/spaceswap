@@ -23,7 +23,7 @@ const provider = new MockProvider({
   })
 const [walletOwner, walletGovernance, wallet1, wallet2] = provider.getWallets();
 
-describe('Blender', () => {  
+describe('Blender - getMilkForShake', () => {  
 
   let ShakeToken: Contract
   let MilkyWayToken: Contract
@@ -163,7 +163,7 @@ describe('Blender', () => {
     await Blender.connect(wallet2).getOneShake()
     
 
-    //!!!! 1 shake has returned !!!!
+    //!!!! 1 shake has been returned !!!!
     await Blender.connect(wallet2).getMilkForShake(1)
 
     expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(expandTo18Decimals(2))
