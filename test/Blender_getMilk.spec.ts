@@ -136,7 +136,8 @@ describe('Blender', () => {
 
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(0);
     
-    await expect(Blender.connect(wallet2).getMilkForShake(0)).to.be.reverted
+    //await expect(Blender.connect(wallet2).getMilkForShake(0)).to.be.reverted
+    await Blender.connect(wallet2).getMilkForShake(0)
     
     let qq1 = await MilkyWayToken.balanceOf(wallet2.address)
     console.log('balance_Milk=', qq1.toString())
