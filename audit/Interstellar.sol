@@ -1,48 +1,5 @@
-// COPIED FROM https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/GovernorAlpha.sol
-// Copyright 2020 Compound Labs, Inc.
-// Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-// 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-// 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-// 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Ctrl+f for XXX to see all the modifications.
-// uint96s are changed to uint256s for simplicity and safety.
-
-// XXX: pragma solidity ^0.5.16;
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
-
-/**
- *Submitted for verification at Etherscan.io on 2020-09-03
-*/
-
 pragma solidity ^0.6.0;
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
-    }
 
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-
-pragma solidity ^0.6.0;
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
  */
@@ -118,9 +75,8 @@ interface IERC20 {
 }
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
-
-
 pragma solidity ^0.6.0;
+
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
  * checks.
@@ -277,9 +233,6 @@ library SafeMath {
     }
 }
 
-// File: @openzeppelin/contracts/utils/Address.sol
-
-
 pragma solidity ^0.6.2;
 /**
  * @dev Collection of functions related to the address type
@@ -419,10 +372,416 @@ library Address {
     }
 }
 
-// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
+// File: @openzeppelin/contracts/token/ERC20/SafeERC20.sol
+pragma solidity ^0.6.0;
+/**
+ * @title SafeERC20
+ * @dev Wrappers around ERC20 operations that throw on failure (when the token
+ * contract returns false). Tokens that return no value (and instead revert or
+ * throw on failure) are also supported, non-reverting calls are assumed to be
+ * successful.
+ * To use this library you can add a `using SafeERC20 for IERC20;` statement to your contract,
+ * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
+ */
+library SafeERC20 {
+    using SafeMath for uint256;
+    using Address for address;
+
+    function safeTransfer(IERC20 token, address to, uint256 value) internal {
+        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    }
+
+    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
+        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    }
+
+    /**
+     * @dev Deprecated. This function has issues similar to the ones found in
+     * {IERC20-approve}, and its usage is discouraged.
+     *
+     * Whenever possible, use {safeIncreaseAllowance} and
+     * {safeDecreaseAllowance} instead.
+     */
+    function safeApprove(IERC20 token, address spender, uint256 value) internal {
+        // safeApprove should only be called when setting an initial allowance,
+        // or when resetting it to zero. To increase and decrease it, use
+        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
+        // solhint-disable-next-line max-line-length
+        require((value == 0) || (token.allowance(address(this), spender) == 0),
+            "SafeERC20: approve from non-zero to non-zero allowance"
+        );
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+    }
+
+    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).add(value);
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    /**
+     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
+     * on the return value: the return value is optional (but if data is returned, it must not be false).
+     * @param token The token targeted by the call.
+     * @param data The call data (encoded using abi.encode or one of its variants).
+     */
+    function _callOptionalReturn(IERC20 token, bytes memory data) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
+        // the target address contains contract code and also asserts for success in the low-level call.
+
+        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
+        if (returndata.length > 0) { // Return data is optional
+            // solhint-disable-next-line max-line-length
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+        }
+    }
+}
+
+// File: @openzeppelin/contracts/utils/EnumerableSet.sol
+pragma solidity ^0.6.0;
+
+/**
+ * @dev Library for managing
+ * https://en.wikipedia.org/wiki/Set_(abstract_data_type)[sets] of primitive
+ * types.
+ *
+ * Sets have the following properties:
+ *
+ * - Elements are added, removed, and checked for existence in constant time
+ * (O(1)).
+ * - Elements are enumerated in O(n). No guarantees are made on the ordering.
+ *
+ * ```
+ * contract Example {
+ *     // Add the library methods
+ *     using EnumerableSet for EnumerableSet.AddressSet;
+ *
+ *     // Declare a set state variable
+ *     EnumerableSet.AddressSet private mySet;
+ * }
+ * ```
+ *
+ * As of v3.0.0, only sets of type `address` (`AddressSet`) and `uint256`
+ * (`UintSet`) are supported.
+ */
+library EnumerableSet {
+    // To implement this library for multiple types with as little code
+    // repetition as possible, we write it in terms of a generic Set type with
+    // bytes32 values.
+    // The Set implementation uses private functions, and user-facing
+    // implementations (such as AddressSet) are just wrappers around the
+    // underlying Set.
+    // This means that we can only create new EnumerableSets for types that fit
+    // in bytes32.
+
+    struct Set {
+        // Storage of set values
+        bytes32[] _values;
+
+        // Position of the value in the `values` array, plus 1 because index 0
+        // means a value is not in the set.
+        mapping (bytes32 => uint256) _indexes;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function _add(Set storage set, bytes32 value) private returns (bool) {
+        if (!_contains(set, value)) {
+            set._values.push(value);
+            // The value is stored at length-1, but we add 1 to all indexes
+            // and use 0 as a sentinel value
+            set._indexes[value] = set._values.length;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function _remove(Set storage set, bytes32 value) private returns (bool) {
+        // We read and store the value's index to prevent multiple reads from the same storage slot
+        uint256 valueIndex = set._indexes[value];
+
+        if (valueIndex != 0) { // Equivalent to contains(set, value)
+            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in
+            // the array, and then remove the last element (sometimes called as 'swap and pop').
+            // This modifies the order of the array, as noted in {at}.
+
+            uint256 toDeleteIndex = valueIndex - 1;
+            uint256 lastIndex = set._values.length - 1;
+
+            // When the value to delete is the last one, the swap operation is unnecessary. However, since this occurs
+            // so rarely, we still do the swap anyway to avoid the gas cost of adding an 'if' statement.
+
+            bytes32 lastvalue = set._values[lastIndex];
+
+            // Move the last value to the index where the value to delete is
+            set._values[toDeleteIndex] = lastvalue;
+            // Update the index for the moved value
+            set._indexes[lastvalue] = toDeleteIndex + 1; // All indexes are 1-based
+
+            // Delete the slot where the moved value was stored
+            set._values.pop();
+
+            // Delete the index for the deleted slot
+            delete set._indexes[value];
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function _contains(Set storage set, bytes32 value) private view returns (bool) {
+        return set._indexes[value] != 0;
+    }
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function _length(Set storage set) private view returns (uint256) {
+        return set._values.length;
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function _at(Set storage set, uint256 index) private view returns (bytes32) {
+        require(set._values.length > index, "EnumerableSet: index out of bounds");
+        return set._values[index];
+    }
+
+    // AddressSet
+
+    struct AddressSet {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(AddressSet storage set, address value) internal returns (bool) {
+        return _add(set._inner, bytes32(uint256(value)));
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(AddressSet storage set, address value) internal returns (bool) {
+        return _remove(set._inner, bytes32(uint256(value)));
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(AddressSet storage set, address value) internal view returns (bool) {
+        return _contains(set._inner, bytes32(uint256(value)));
+    }
+
+    /**
+     * @dev Returns the number of values in the set. O(1).
+     */
+    function length(AddressSet storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(AddressSet storage set, uint256 index) internal view returns (address) {
+        return address(uint256(_at(set._inner, index)));
+    }
+
+
+    // UintSet
+
+    struct UintSet {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(UintSet storage set, uint256 value) internal returns (bool) {
+        return _add(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(UintSet storage set, uint256 value) internal returns (bool) {
+        return _remove(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(UintSet storage set, uint256 value) internal view returns (bool) {
+        return _contains(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function length(UintSet storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(UintSet storage set, uint256 index) internal view returns (uint256) {
+        return uint256(_at(set._inner, index));
+    }
+}
+
+// File: @openzeppelin/contracts/GSN/Context.sol
+
+pragma solidity ^0.6.0;
+/*
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with GSN meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address payable) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes memory) {
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        return msg.data;
+    }
+}
+
+// File: @openzeppelin/contracts/access/Ownable.sol
 
 
 pragma solidity ^0.6.0;
+
+/**
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
+ *
+ * By default, the owner account will be the one that deploys the contract. This
+ * can later be changed with {transferOwnership}.
+ *
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
+ */
+contract Ownable is Context {
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    constructor () internal {
+        address msgSender = _msgSender();
+        _owner = msgSender;
+        emit OwnershipTransferred(address(0), msgSender);
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(_owner == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+}
+
+// File: @openzeppelin/contracts/token/ERC20/ERC20.sol
+
+pragma solidity ^0.6.0;
+
 /**
  * @dev Implementation of the {IERC20} interface.
  *
@@ -722,77 +1081,9 @@ contract ERC20 is Context, IERC20 {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }
 
-// File: @openzeppelin/contracts/access/Ownable.sol
-
-
-pragma solidity ^0.6.0;
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract Ownable is Context {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor () internal {
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(_owner == _msgSender(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
-}
-
-// File: contracts/MilkyWayToken.sol
 
 pragma solidity 0.6.12;
+
 contract GovernanceContract is Ownable {
 
   mapping(address => bool) public governanceContracts;
@@ -824,7 +1115,11 @@ contract GovernanceContract is Ownable {
   }
 }
 
+
+// File: contracts/MilkyWayToken.sol
+
 pragma solidity 0.6.12;
+
 // MilkyWayToken with Governance.
 contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
 
@@ -839,18 +1134,16 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
 
 
     /// @notice Creates `_amount` token to `_to`. Must only be called by the  Governance Contracts
-    function mint(address _to, uint256 _amount) public onlyGovernanceContracts virtual returns (bool) {
+    function mint(address _to, uint256 _amount) public onlyGovernanceContracts {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
-        return true;
     }
 
-    /// @notice Creates `_amount` token to `_to`. Must only be called by the Governance Contracts
-    function burn(address _to, uint256 _amount) public onlyGovernanceContracts virtual returns (bool) {
+    // @notice Creates `_amount` token to `_to`. Must only be called by the Governance Contracts
+    function burn(address _to, uint256 _amount) public onlyGovernanceContracts {
         _burn(_to, _amount);
         _totalBurned = _totalBurned.add(_amount);
         _moveDelegates(_delegates[_to], address(0), _amount);
-        return true;
     }
 
     // Copied and modified from YAM code:
@@ -1080,333 +1373,246 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
         assembly { chainId := chainid() }
         return chainId;
     }
-}
+}// Interstellar is the master of MILKIWAY. He can make MILKIWAY and he is a fair guy.
+//
+// Note that it's ownable and the owner wields tremendous power. The ownership
+// will be transferred to a governance smart contract once MILKIWAY is sufficiently
+// distributed and the community can show to govern itself.
+//
+// Have fun reading it. Hopefully it's bug-free. God bless.
+contract Interstellar is Ownable {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
-contract GovernorAlpha {
-    /// @notice The name of this contract
-    // XXX: string public constant name = "Compound Governor Alpha";
-    string public constant name = "MilkyWay Governor Alpha";
+    // Info of each user.
+    struct UserInfo {
+        uint256 amount;     // How many LP tokens the user has provided.
+        uint256 rewardDebt; // Reward debt. See explanation below.
+        //
+        // We do some fancy math here. Basically, any point in time, the amount of Milks
+        // entitled to a user but is pending to be distributed is:
+        //
+        //   pending reward = (user.amount * pool.accMilkPerShare) - user.rewardDebt
+        //
+        // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
+        //   1. The pool's `accMilkPerShare` (and `lastRewardBlock`) gets updated.
+        //   2. User receives the pending reward sent to his/her address.
+        //   3. User's `amount` gets updated.
+        //   4. User's `rewardDebt` gets updated.
+    }
 
-    /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-    // XXX: function quorumVotes() public pure returns (uint) { return 400000e18; } // 400,000 = 4% of Comp
-    function quorumVotes() public view returns (uint) { return milk.totalSupply() / 25; } // 4% of Supply // todo
+    // Info of each pool.
+    struct PoolInfo {
+        IERC20 lpToken;           // Address of LP token contract.
+        uint256 allocPoint;       // How many allocation points assigned to this pool. MILKs to distribute per block.
+        uint256 lastRewardBlock;  // Last block number that MILKs distribution occurs.
+        uint256 accMilkPerShare; // Accumulated MILKs per share, times 1e12. See below.
+    }
 
-    /// @notice The number of votes required in order for a voter to become a proposer
-    // function proposalThreshold() public pure returns (uint) { return 100000e18; } // 100,000 = 1% of Comp
-    function proposalThreshold() public view returns (uint) { return milk.totalSupply() / 100; } // 1% of Supply
-
-    /// @notice The maximum number of actions that can be included in a proposal
-    function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
-
-    /// @notice The delay before voting on a proposal may take place, once proposed
-    function votingDelay() public pure returns (uint) { return 1; } // 1 block
-
-    /// @notice The duration of voting on a proposal, in blocks
-    function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
-
-    /// @notice The address of the Compound Protocol Timelock
-    TimelockInterface public timelock;
-
-    /// @notice The address of the Compound governance token
-    // XXX: CompInterface public comp;
+    // The MILKIWAY_TOKEN!
     MilkyWayToken public milk;
 
-    /// @notice The address of the Governor Guardian
-    address public guardian;
+    // Dev address.
+    address public devAddr;
 
-    /// @notice The total number of proposals
-    uint public proposalCount;
+    // MILK tokens created per block.
+    uint256 public milkPerBlock; // 2
 
-    struct Proposal {
-        /// @notice Unique id for looking up a proposal
-        uint id;
+    // The block number when MILK mining starts.
+    uint256 public startFirstPhaseBlock;
 
-        /// @notice Creator of the proposal
-        address proposer;
+    // The block number when MILK mining starts.
+    uint256 public startSecondPhaseBlock;
 
-        /// @notice The timestamp that the proposal will be available for execution, set once the vote succeeds
-        uint eta;
+    // The block number when MILK mining starts.
+    uint256 public startThirdPhaseBlock;
 
-        /// @notice the ordered list of target addresses for calls to be made
-        address[] targets;
+    // Block number when bonus MILK period ends.
+    uint256 public bonusEndBlock;
 
-        /// @notice The ordered list of values (i.e. msg.value) to be passed to the calls to be made
-        uint[] values;
+    // Bonus multiplier for early milk makers.
+    uint256 public constant BONUS_MULTIPLIER_1 = 20; // first 10,000 blocks
 
-        /// @notice The ordered list of function signatures to be called
-        string[] signatures;
+    uint256 public constant BONUS_MULTIPLIER_2 = 10; // next 30,000 blocks
 
-        /// @notice The ordered list of calldata to be passed to each call
-        bytes[] calldatas;
+    uint256 public constant BONUS_MULTIPLIER_3 = 5; // last 60,000 blocks
 
-        /// @notice The block at which voting begins: holders must delegate their votes prior to this block
-        uint startBlock;
+    // Info of each pool.
+    PoolInfo[] public poolInfo;
 
-        /// @notice The block at which voting ends: votes must be cast prior to this block
-        uint endBlock;
+    // Info of each user that stakes LP tokens.
+    mapping (uint256 => mapping (address => UserInfo)) public userInfo;
 
-        /// @notice Current number of votes in favor of this proposal
-        uint forVotes;
+    // Total allocation points. Must be the sum of all allocation points in all pools.
+    uint256 public totalAllocPoint = 0;
 
-        /// @notice Current number of votes in opposition to this proposal
-        uint againstVotes;
 
-        /// @notice Flag marking whether the proposal has been canceled
-        bool canceled;
+    event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
+    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
-        /// @notice Flag marking whether the proposal has been executed
-        bool executed;
-
-        /// @notice Receipts of ballots for the entire set of voters
-        mapping (address => Receipt) receipts;
+    constructor(
+        MilkyWayToken _milk,
+        address _devAddr,
+        uint256 _milkPerBlock, // 2000000000000000000
+        uint256 _startFirstPhaseBlock // 0
+    ) public {
+        milk = _milk;
+        devAddr = _devAddr;
+        milkPerBlock = _milkPerBlock;
+        startFirstPhaseBlock = _startFirstPhaseBlock;
+        startSecondPhaseBlock = startFirstPhaseBlock.add(10000);
+        startThirdPhaseBlock = startSecondPhaseBlock.add(30000);
+        bonusEndBlock = startThirdPhaseBlock.add(60000);
     }
 
-    /// @notice Ballot receipt record for a voter
-    struct Receipt {
-        /// @notice Whether or not a vote has been cast
-        bool hasVoted;
-
-        /// @notice Whether or not the voter supports the proposal
-        bool support;
-
-        /// @notice The number of votes the voter had, which were cast
-        uint256 votes;
+    function poolLength() external view returns (uint256) {
+        return poolInfo.length;
     }
 
-    /// @notice Possible states that a proposal may be in
-    enum ProposalState {
-        Pending,
-        Active,
-        Canceled,
-        Defeated,
-        Succeeded,
-        Queued,
-        Expired,
-        Executed
-    }
-
-    /// @notice The official record of all proposals ever proposed
-    mapping (uint => Proposal) public proposals;
-
-    /// @notice The latest proposal for each proposer
-    mapping (address => uint) public latestProposalIds;
-
-    /// @notice The EIP-712 typehash for the contract's domain
-    bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
-
-    /// @notice The EIP-712 typehash for the ballot struct used by the contract
-    bytes32 public constant BALLOT_TYPEHASH = keccak256("Ballot(uint256 proposalId,bool support)");
-
-    /// @notice An event emitted when a new proposal is created
-    event ProposalCreated(uint id, address proposer, address[] targets, uint[] values, string[] signatures, bytes[] calldatas, uint startBlock, uint endBlock, string description);
-
-    /// @notice An event emitted when a vote has been cast on a proposal
-    event VoteCast(address voter, uint proposalId, bool support, uint votes);
-
-    /// @notice An event emitted when a proposal has been canceled
-    event ProposalCanceled(uint id);
-
-    /// @notice An event emitted when a proposal has been queued in the Timelock
-    event ProposalQueued(uint id, uint eta);
-
-    /// @notice An event emitted when a proposal has been executed in the Timelock
-    event ProposalExecuted(uint id);
-
-    constructor(address timelock_, address milk_, address guardian_) public {
-        timelock = TimelockInterface(timelock_);
-        milk = MilkyWayToken(milk_);
-        guardian = guardian_;
-    }
-
-    function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
-        require(milk.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(), "GovernorAlpha::propose: proposer votes below proposal threshold");
-        require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "GovernorAlpha::propose: proposal function information arity mismatch");
-        require(targets.length != 0, "GovernorAlpha::propose: must provide actions");
-        require(targets.length <= proposalMaxOperations(), "GovernorAlpha::propose: too many actions");
-
-        uint latestProposalId = latestProposalIds[msg.sender];
-        if (latestProposalId != 0) {
-          ProposalState proposersLatestProposalState = state(latestProposalId);
-          require(proposersLatestProposalState != ProposalState.Active, "GovernorAlpha::propose: one live proposal per proposer, found an already active proposal");
-          require(proposersLatestProposalState != ProposalState.Pending, "GovernorAlpha::propose: one live proposal per proposer, found an already pending proposal");
+    // Add a new lp to the pool. Can only be called by the owner.
+    // XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do.
+    function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate) public onlyOwner {
+        if (_withUpdate) {
+            massUpdatePools();
         }
-
-        uint startBlock = add256(block.number, votingDelay());
-        uint endBlock = add256(startBlock, votingPeriod());
-
-        proposalCount++;
-        Proposal memory newProposal = Proposal({
-            id: proposalCount,
-            proposer: msg.sender,
-            eta: 0,
-            targets: targets,
-            values: values,
-            signatures: signatures,
-            calldatas: calldatas,
-            startBlock: startBlock,
-            endBlock: endBlock,
-            forVotes: 0,
-            againstVotes: 0,
-            canceled: false,
-            executed: false
-        });
-
-        proposals[newProposal.id] = newProposal;
-        latestProposalIds[newProposal.proposer] = newProposal.id;
-
-        emit ProposalCreated(newProposal.id, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
-        return newProposal.id;
+        uint256 lastRewardBlock = block.number > startFirstPhaseBlock ? block.number : startFirstPhaseBlock;
+        totalAllocPoint = totalAllocPoint.add(_allocPoint);
+        poolInfo.push(PoolInfo({
+        lpToken: _lpToken,
+        allocPoint: _allocPoint,
+        lastRewardBlock: lastRewardBlock,
+        accMilkPerShare: 0
+        }));
     }
 
-    function queue(uint proposalId) public {
-        require(state(proposalId) == ProposalState.Succeeded, "GovernorAlpha::queue: proposal can only be queued if it is succeeded");
-        Proposal storage proposal = proposals[proposalId];
-        uint eta = add256(block.timestamp, timelock.delay());
-        for (uint i = 0; i < proposal.targets.length; i++) {
-            _queueOrRevert(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], eta);
+    // Update the given pool's MILK allocation point. Can only be called by the owner.
+    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) public onlyOwner {
+        if (_withUpdate) {
+            massUpdatePools();
         }
-        proposal.eta = eta;
-        emit ProposalQueued(proposalId, eta);
+        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
+        poolInfo[_pid].allocPoint = _allocPoint;
     }
 
-    function _queueOrRevert(address target, uint value, string memory signature, bytes memory data, uint eta) internal {
-        require(!timelock.queuedTransactions(keccak256(abi.encode(target, value, signature, data, eta))), "GovernorAlpha::_queueOrRevert: proposal action already queued at eta");
-        timelock.queueTransaction(target, value, signature, data, eta);
-    }
 
-    function execute(uint proposalId) public payable {
-        require(state(proposalId) == ProposalState.Queued, "GovernorAlpha::execute: proposal can only be executed if it is queued");
-        Proposal storage proposal = proposals[proposalId];
-        proposal.executed = true;
-        for (uint i = 0; i < proposal.targets.length; i++) {
-            timelock.executeTransaction.value(proposal.values[i])(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+    // Return reward multiplier over the given _from to _to block.
+    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
+        if (_to <= startFirstPhaseBlock) { // 0
+            return  _to.sub(_from); // x1
         }
-        emit ProposalExecuted(proposalId);
-    }
-
-    function cancel(uint proposalId) public {
-        ProposalState state = state(proposalId);
-        require(state != ProposalState.Executed, "GovernorAlpha::cancel: cannot cancel executed proposal");
-
-        Proposal storage proposal = proposals[proposalId];
-        require(msg.sender == guardian || milk.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "GovernorAlpha::cancel: proposer above threshold");
-
-        proposal.canceled = true;
-        for (uint i = 0; i < proposal.targets.length; i++) {
-            timelock.cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+        else if (_to <= startSecondPhaseBlock) { // + 10,000 blocks
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_1); // x20
         }
-
-        emit ProposalCanceled(proposalId);
+        else if (_to <= startThirdPhaseBlock) { // + 40,000 blocks
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_2); //x10
+        }
+        else if (_to <= bonusEndBlock) { // + 40,000 blocks
+            return _to.sub(_from).mul(BONUS_MULTIPLIER_3); // x5
+        }
+        else if (_from >= bonusEndBlock) { // + 100,000 blocks
+            return _to.sub(_from);
+        }
+        else {
+            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER_1).add( // todo ????
+                _to.sub(bonusEndBlock)
+            );
+        }
     }
 
-    function getActions(uint proposalId) public view returns (address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas) {
-        Proposal storage p = proposals[proposalId];
-        return (p.targets, p.values, p.signatures, p.calldatas);
+    // View function to see pending MILKs on frontend.
+    function pendingMilk(uint256 _pid, address _user) external view returns (uint256) {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][_user];
+        uint256 accMilkPerShare = pool.accMilkPerShare;
+        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        if (block.number > pool.lastRewardBlock && lpSupply != 0) {
+            uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+            uint256 milkReward = multiplier.mul(milkPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+            accMilkPerShare = accMilkPerShare.add(milkReward.mul(1e12).div(lpSupply));
+        }
+        return user.amount.mul(accMilkPerShare).div(1e12).sub(user.rewardDebt);
     }
 
-    function getReceipt(uint proposalId, address voter) public view returns (Receipt memory) {
-        return proposals[proposalId].receipts[voter];
+    // Update reward variables for all pools. Be careful of gas spending!
+    function massUpdatePools() public {
+        uint256 length = poolInfo.length;
+        for (uint256 pid = 0; pid < length; ++pid) {
+            updatePool(pid);
+        }
     }
 
-    function state(uint proposalId) public view returns (ProposalState) {
-        require(proposalCount >= proposalId && proposalId > 0, "GovernorAlpha::state: invalid proposal id");
-        Proposal storage proposal = proposals[proposalId];
-        if (proposal.canceled) {
-            return ProposalState.Canceled;
-        } else if (block.number <= proposal.startBlock) {
-            return ProposalState.Pending;
-        } else if (block.number <= proposal.endBlock) {
-            return ProposalState.Active;
-        } else if (proposal.forVotes <= proposal.againstVotes || proposal.forVotes < quorumVotes()) {
-            return ProposalState.Defeated;
-        } else if (proposal.eta == 0) {
-            return ProposalState.Succeeded;
-        } else if (proposal.executed) {
-            return ProposalState.Executed;
-        } else if (block.timestamp >= add256(proposal.eta, timelock.GRACE_PERIOD())) {
-            return ProposalState.Expired;
+    // Update reward variables of the given pool to be up-to-date.
+    function updatePool(uint256 _pid) public {
+        PoolInfo storage pool = poolInfo[_pid];
+        if (block.number <= pool.lastRewardBlock) {
+            return;
+        }
+        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        if (lpSupply == 0) {
+            pool.lastRewardBlock = block.number;
+            return;
+        }
+        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        uint256 milkReward = multiplier.mul(milkPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+        milk.mint(devAddr, milkReward.mul(3).div(100)); // todo
+        milk.mint(address(this), milkReward);
+        pool.accMilkPerShare = pool.accMilkPerShare.add(milkReward.mul(1e12).div(lpSupply));
+        pool.lastRewardBlock = block.number;
+    }
+
+    // Deposit LP tokens to Interstellar for MILK allocation.
+    function deposit(uint256 _pid, uint256 _amount) public {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        updatePool(_pid);
+        if (user.amount > 0) {
+            uint256 pending = user.amount.mul(pool.accMilkPerShare).div(1e12).sub(user.rewardDebt);
+            safeMilkTransfer(msg.sender, pending);
+        }
+        pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+        user.amount = user.amount.add(_amount);
+        user.rewardDebt = user.amount.mul(pool.accMilkPerShare).div(1e12);
+        emit Deposit(msg.sender, _pid, _amount);
+    }
+
+    // Withdraw LP tokens from Interstellar.
+    function withdraw(uint256 _pid, uint256 _amount) public {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        require(user.amount >= _amount, "withdraw: not good");
+        updatePool(_pid);
+        uint256 pending = user.amount.mul(pool.accMilkPerShare).div(1e12).sub(user.rewardDebt);
+        safeMilkTransfer(msg.sender, pending);
+        user.amount = user.amount.sub(_amount);
+        user.rewardDebt = user.amount.mul(pool.accMilkPerShare).div(1e12);
+        pool.lpToken.safeTransfer(address(msg.sender), _amount);
+        emit Withdraw(msg.sender, _pid, _amount);
+    }
+
+    // Withdraw without caring about rewards. EMERGENCY ONLY.
+    function emergencyWithdraw(uint256 _pid) public {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        pool.lpToken.safeTransfer(address(msg.sender), user.amount);
+        emit EmergencyWithdraw(msg.sender, _pid, user.amount);
+        user.amount = 0;
+        user.rewardDebt = 0;
+    }
+
+    // Safe milk transfer function, just in case if rounding error causes pool to not have enough MILKs.
+    function safeMilkTransfer(address _to, uint256 _amount) internal {
+        uint256 milkBal = milk.balanceOf(address(this));
+        if (_amount > milkBal) {
+            milk.transfer(_to, milkBal);
         } else {
-            return ProposalState.Queued;
+            milk.transfer(_to, _amount);
         }
     }
 
-    function castVote(uint proposalId, bool support) public {
-        return _castVote(msg.sender, proposalId, support);
+    // Update dev address by the previous dev.
+    function dev(address _devAddr) public {
+        require(msg.sender == devAddr, "dev: wut?");
+        devAddr = _devAddr;
     }
-
-    function castVoteBySig(uint proposalId, bool support, uint8 v, bytes32 r, bytes32 s) public {
-        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
-        bytes32 structHash = keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support));
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
-        address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "GovernorAlpha::castVoteBySig: invalid signature");
-        return _castVote(signatory, proposalId, support);
-    }
-
-    function _castVote(address voter, uint proposalId, bool support) internal {
-        require(state(proposalId) == ProposalState.Active, "GovernorAlpha::_castVote: voting is closed");
-        Proposal storage proposal = proposals[proposalId];
-        Receipt storage receipt = proposal.receipts[voter];
-        require(receipt.hasVoted == false, "GovernorAlpha::_castVote: voter already voted");
-        uint256 votes = milk.getPriorVotes(voter, proposal.startBlock);
-
-        if (support) {
-            proposal.forVotes = add256(proposal.forVotes, votes);
-        } else {
-            proposal.againstVotes = add256(proposal.againstVotes, votes);
-        }
-
-        receipt.hasVoted = true;
-        receipt.support = support;
-        receipt.votes = votes;
-
-        emit VoteCast(voter, proposalId, support, votes);
-    }
-
-    function __acceptAdmin() public {
-        require(msg.sender == guardian, "GovernorAlpha::__acceptAdmin: sender must be gov guardian");
-        timelock.acceptAdmin();
-    }
-
-    function __abdicate() public {
-        require(msg.sender == guardian, "GovernorAlpha::__abdicate: sender must be gov guardian");
-        guardian = address(0);
-    }
-
-    function __queueSetTimelockPendingAdmin(address newPendingAdmin, uint eta) public {
-        require(msg.sender == guardian, "GovernorAlpha::__queueSetTimelockPendingAdmin: sender must be gov guardian");
-        timelock.queueTransaction(address(timelock), 0, "setPendingAdmin(address)", abi.encode(newPendingAdmin), eta);
-    }
-
-    function __executeSetTimelockPendingAdmin(address newPendingAdmin, uint eta) public {
-        require(msg.sender == guardian, "GovernorAlpha::__executeSetTimelockPendingAdmin: sender must be gov guardian");
-        timelock.executeTransaction(address(timelock), 0, "setPendingAdmin(address)", abi.encode(newPendingAdmin), eta);
-    }
-
-    function add256(uint256 a, uint256 b) internal pure returns (uint) {
-        uint c = a + b;
-        require(c >= a, "addition overflow");
-        return c;
-    }
-
-    function sub256(uint256 a, uint256 b) internal pure returns (uint) {
-        require(b <= a, "subtraction underflow");
-        return a - b;
-    }
-
-    function getChainId() internal pure returns (uint) {
-        uint chainId;
-        assembly { chainId := chainid() }
-        return chainId;
-    }
-}
-
-interface TimelockInterface {
-    function delay() external view returns (uint);
-    function GRACE_PERIOD() external view returns (uint);
-    function acceptAdmin() external;
-    function queuedTransactions(bytes32 hash) external view returns (bool);
-    function queueTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external returns (bytes32);
-    function cancelTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external;
-    function executeTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external payable returns (bytes memory);
 }

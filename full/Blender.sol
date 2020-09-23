@@ -241,7 +241,7 @@ interface IERC20 {
 /**
  * @title Blender is exchange contract for MILK2 <=> SHAKE tokens
  *
- * @dev Dont't forget permit mint and burn in tokent contracts 
+ * @dev Don't forget permit mint and burn in tokens contracts
  */contract Blender {
     using SafeMath for uint256;
     
