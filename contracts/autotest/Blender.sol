@@ -241,7 +241,7 @@ interface IERC20 {
 /**
  * @title Blender is exchange contract for MILK2 <=> SHAKE tokens
  *
- * @dev Dont't forget permit mint and burn in tokent contracts 
+ * @dev Don't forget permit mint and burn in tokens contracts
  */contract Blender {
     using SafeMath for uint256;
     
@@ -298,7 +298,7 @@ interface IERC20 {
     }
     
     /**
-     * @dev Just exchage your SHAKE for MILK2.
+     * @dev Just exchange your SHAKE for MILK2.
      * Caller must have SHAKE on his/her balance.
      * `_amount` is amount of user's SHAKE that he/she want burn for get MILK2 
      * Note that one need use `_amount` without decimals.

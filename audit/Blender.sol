@@ -242,7 +242,8 @@ interface IERC20 {
  * @title Blender is exchange contract for MILK2 <=> SHAKE tokens
  *
  * @dev Don't forget permit mint and burn in tokens contracts
- */contract Blender {
+ */
+contract Blender {
     using SafeMath for uint256;
     
     uint256 public constant  SHAKE_PRICE_STEP = 10*10**18;  //MILK2
