@@ -92,5 +92,14 @@ Please specify the following parametrs when deploying:
 `_startFromBlock` - from this block Blender will start
 `_endAtBlock` - after this block Blender **will not work** !!!
 
+### Frontend metrics
+Max Supply  - `ShakeToken.MAX_TOTAL_SUPPLY()`  
+Current Supply - `ShakeToken.totalSupply()`  
+Available to mint  - `ShakeToken.MAX_TOTAL_SUPPLY()` - `ShakeToken.totalSupply()`  
+Total burned - `ShakeToken.totalBurned()`  
+Total minted - `ShakeToken.totalMinted()`  
+Current price - `Blender.currShakePrice()`  
+Price increment - `Blender.SHAKE_PRICE_STEP()`  
+
 
 
