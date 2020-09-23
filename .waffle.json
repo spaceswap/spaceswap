@@ -1,6 +1,7 @@
 {
   "compilerVersion": "./node_modules/solc",
   "outputType": "all",
+  "sourceDirectory": "./contracts/autotest",
   "compilerOptions": {
     "outputSelection": {
       "*": {
