@@ -817,7 +817,7 @@ contract GovernanceContract is Ownable {
 
 pragma solidity 0.6.12;
 // MilkyWayToken with Governance.
-contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
+contract MilkyWayToken is ERC20("MilkyWay Token by SpaceSwap v2", "MILK2"), GovernanceContract {
 
     uint256 private _totalBurned;
 

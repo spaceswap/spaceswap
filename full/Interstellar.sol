@@ -1126,7 +1126,7 @@ contract GovernanceContract is Ownable {
 pragma solidity 0.6.12;
 
 // MilkyWayToken with Governance.
-contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
+contract MilkyWayToken is ERC20("MilkyWay Token by SpaceSwap v2", "MILK2"), GovernanceContract {
 
     uint256 private _totalBurned;
 
@@ -1139,16 +1139,18 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
 
 
     /// @notice Creates `_amount` token to `_to`. Must only be called by the  Governance Contracts
-    function mint(address _to, uint256 _amount) public onlyGovernanceContracts {
+    function mint(address _to, uint256 _amount) public onlyGovernanceContracts virtual returns (bool) {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
+        return true;
     }
 
-    // @notice Creates `_amount` token to `_to`. Must only be called by the Governance Contracts
-    function burn(address _to, uint256 _amount) public onlyGovernanceContracts {
+    /// @notice Creates `_amount` token to `_to`. Must only be called by the Governance Contracts
+    function burn(address _to, uint256 _amount) public onlyGovernanceContracts virtual returns (bool) {
         _burn(_to, _amount);
         _totalBurned = _totalBurned.add(_amount);
         _moveDelegates(_delegates[_to], address(0), _amount);
+        return true;
     }
 
     // Copied and modified from YAM code:
@@ -1378,8 +1380,7 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
         assembly { chainId := chainid() }
         return chainId;
     }
-}// Interstellar is the master of MILKIWAY. He can make MILKIWAY and he is a fair guy.
-//
+}//
 // Note that it's ownable and the owner wields tremendous power. The ownership
 // will be transferred to a governance smart contract once MILKIWAY is sufficiently
 // distributed and the community can show to govern itself.
