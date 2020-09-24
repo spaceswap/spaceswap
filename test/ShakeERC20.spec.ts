@@ -26,14 +26,14 @@ describe('ShakeERC20', () => {
 
   let token: Contract
   beforeEach(async () => {
-    token = await deployContract(walletMinter, ShakeERC20, ['Shake', 'SHK', MAX_TOTAL_SUPPLY])
+    token = await deployContract(walletMinter, ShakeERC20)
     await token.connect(walletMinter).mint(walletShake.address, AMOUNT_MINT)
   })
 
   it('name, symbol, decimals, totalSupply, balanceOf', async () => {
     const name = await token.name()
-    expect(name).to.eq('Shake')
-    expect(await token.symbol()).to.eq('SHK')
+    expect(name).to.eq('SHAKE token by SpaceSwap v2')
+    expect(await token.symbol()).to.eq('SHAKE')
     expect(await token.decimals()).to.eq(18)
     expect(await token.MAX_TOTAL_SUPPLY()).to.eq(expandTo18Decimals(MAX_TOTAL_SUPPLY))
     expect(await token.totalSupply()).to.eq(AMOUNT_MINT)

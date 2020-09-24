@@ -250,20 +250,18 @@ interface IERC20 {
     address public immutable MILK_ADDRESS;
     address public immutable SHAKE_ADDRESS;
     uint32  public immutable START_FROM_BLOCK;
-    uint32  public immutable END_AT_BLOCK;
     
     uint256 public currShakePrice;
     
     /**
      * @dev Sets the values for {MILK_ADDRESS}, {SHAKE_ADDRESS}
-     * {START_FROM_BLOCK} and {END_AT_BLOCK}, initializes {currShakePrice} with
+     * {START_FROM_BLOCK} , initializes {currShakePrice} with
      * a default value of 1000*10**18.
      */ 
     constructor (
         address _milkAddress,
         address _shakeAddress,
-        uint32  _startFromBlock,
-        uint32  _endAtBlock
+        uint32  _startFromBlock
     )
     public
     {
@@ -271,7 +269,6 @@ interface IERC20 {
         SHAKE_ADDRESS    = _shakeAddress;
         currShakePrice   = 1000*10**18; //MILK2
         START_FROM_BLOCK = _startFromBlock;
-        END_AT_BLOCK     = _endAtBlock;
     }
     
     /**
@@ -280,11 +277,10 @@ interface IERC20 {
      * Each call will increase SHAKE price with one step, see `SHAKE_PRICE_STEP`.
      * be displayed to a user as `5,05` (`505 / 10 ** 2`).
      *
-     * Function can be called after `START_FROM_BLOCK` and before `END_AT_BLOCK`
+     * Function can be called after `START_FROM_BLOCK` 
      */
     function getOneShake() external {
         require(block.number >= START_FROM_BLOCK, "Please wait for start block");
-        require(block.number < END_AT_BLOCK, "Sorry, it's too late");
 
         IERC20 milk2Token = IERC20(MILK_ADDRESS);
 
@@ -305,11 +301,10 @@ interface IERC20 {
      * 
      * Note that MILK2 amount will calculate from the reduced by one step `currShakePrice`
      *
-     * Function can be called after `START_FROM_BLOCK` and before `END_AT_BLOCK`
+     * Function can be called after `START_FROM_BLOCK`
      */
     function getMilkForShake(uint16 _amount) external {
         require(block.number >= START_FROM_BLOCK, "Please wait for start block");
-        require(block.number < END_AT_BLOCK, "Sorry, it's too late");
 
         IERC20 shakeToken = IERC20(SHAKE_ADDRESS);
         
