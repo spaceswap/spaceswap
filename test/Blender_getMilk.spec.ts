@@ -54,8 +54,6 @@ describe('Blender - getMilkForShake', () => {
     expect(await ShakeToken.symbol()).to.eq('SHAKE')
     expect(await ShakeToken.decimals()).to.eq(18)
     expect(await ShakeToken.MAX_TOTAL_SUPPLY()).to.eq(expandTo18Decimals(MAX_TOTAL_SUPPLY))
-    let ww = await ShakeToken.MAX_TOTAL_SUPPLY()
-    console.log(ww.toString())
   })
   
   it('name, symbol, decimals - MilkyWayToken', async () => {
