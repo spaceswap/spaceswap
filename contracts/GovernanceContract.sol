@@ -31,10 +31,4 @@ contract GovernanceContract is Ownable {
       success = true;
     }
   }
-
-
-  function isGovernanceContract(address _contract) public returns(bool) {
-    require(governanceContracts[_contract] == true);
-    return true;
-  }
 }
