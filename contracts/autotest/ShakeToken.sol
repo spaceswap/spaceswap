@@ -603,13 +603,12 @@ contract ShakeERC20 is  ERC20, MinterRole {
     uint256 public totalBurned = 0;
 
     constructor(
-        string memory name, string memory symbol, uint256 maxSupply 
+        //string memory name, string memory symbol
     ) public  
-      ERC20(name, symbol)
-      //ERC20Mintable(address(msg.sender))
+      ERC20('SHAKE token by SpaceSwap v2', 'SHAKE')
       MinterRole(address(msg.sender))
     { 
-        MAX_TOTAL_SUPPLY = maxSupply*10**18;
+        MAX_TOTAL_SUPPLY = 10000*10**18; //10 000 SHAKE
     }
 
     /**

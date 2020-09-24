@@ -31,7 +31,7 @@ describe('Blender - special cases', () => {
   beforeEach(async () => {
 
     //deploy MilkyWayToken
-    ShakeToken = await deployContract(walletOwner, _ShakeERC20, ['Shake', 'SHK', MAX_TOTAL_SUPPLY])
+    ShakeToken = await deployContract(walletOwner, _ShakeERC20)
         
     //deploy MilkyWayToken
     MilkyWayToken = await deployContract(walletOwner, _MilkyWayToken)
@@ -51,8 +51,8 @@ describe('Blender - special cases', () => {
 
   it('name, symbol, decimals - Shake', async () => {
     const name = await ShakeToken.name()
-    expect(name).to.eq('Shake')
-    expect(await ShakeToken.symbol()).to.eq('SHK')
+    expect(name).to.eq('SHAKE token by SpaceSwap v2')    
+    expect(await ShakeToken.symbol()).to.eq('SHAKE')
     expect(await ShakeToken.decimals()).to.eq(18)
     expect(await ShakeToken.MAX_TOTAL_SUPPLY()).to.eq(expandTo18Decimals(MAX_TOTAL_SUPPLY))
   })
