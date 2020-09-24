@@ -37,7 +37,7 @@ describe('Blender - special cases', () => {
     MilkyWayToken = await deployContract(walletOwner, _MilkyWayToken)
 
     //deploy Blender
-    Blender = await deployContract(walletOwner, _Blender, [MilkyWayToken.address, ShakeToken.address, 40, 120])
+    Blender = await deployContract(walletOwner, _Blender, [MilkyWayToken.address, ShakeToken.address, 40])
     
     //owner adds Blender.address to governance of MilkyWayToken
     await MilkyWayToken.connect(walletOwner).addAddressToGovernanceContract(Blender.address)
@@ -68,7 +68,6 @@ describe('Blender - special cases', () => {
     expect(await Blender.MILK_ADDRESS()).to.eq(MilkyWayToken.address)
     expect(await Blender.SHAKE_ADDRESS()).to.eq(ShakeToken.address)
     expect(await Blender.START_FROM_BLOCK()).to.eq(40)
-    expect(await Blender.END_AT_BLOCK()).to.eq(120)
   })
 
   it('getMilkForShake works only after START_FROM_BLOCK', async () => {

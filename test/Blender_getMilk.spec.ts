@@ -37,7 +37,7 @@ describe('Blender - getMilkForShake', () => {
     MilkyWayToken = await deployContract(walletOwner, _MilkyWayToken)
 
     //deploy Blender
-    Blender = await deployContract(walletOwner, _Blender, [MilkyWayToken.address, ShakeToken.address, 50, 120])
+    Blender = await deployContract(walletOwner, _Blender, [MilkyWayToken.address, ShakeToken.address, 50])
     
     //owner adds Blender.address, wallet1.address to governance of MilkyWayToken
     await MilkyWayToken.connect(walletOwner).addAddressToGovernanceContract(Blender.address)
@@ -54,6 +54,8 @@ describe('Blender - getMilkForShake', () => {
     expect(await ShakeToken.symbol()).to.eq('SHK')
     expect(await ShakeToken.decimals()).to.eq(18)
     expect(await ShakeToken.MAX_TOTAL_SUPPLY()).to.eq(expandTo18Decimals(MAX_TOTAL_SUPPLY))
+    let ww = await ShakeToken.MAX_TOTAL_SUPPLY()
+    console.log(ww.toString())
   })
   
   it('name, symbol, decimals - MilkyWayToken', async () => {
@@ -67,7 +69,6 @@ describe('Blender - getMilkForShake', () => {
     expect(await Blender.MILK_ADDRESS()).to.eq(MilkyWayToken.address)
     expect(await Blender.SHAKE_ADDRESS()).to.eq(ShakeToken.address)
     expect(await Blender.START_FROM_BLOCK()).to.eq(50)
-    expect(await Blender.END_AT_BLOCK()).to.eq(120)
   })
 
   it('getMilkForShake does not work - start block has not happened yet ', async () => {
@@ -152,7 +153,7 @@ describe('Blender - getMilkForShake', () => {
     expect(await ShakeToken.totalBurned()).to.eq(expandTo18Decimals(1))
   })
 
-  it('getMilkForShake does not work - the time is finished ', async () => {
+  it('getMilkForShake does not work - 3 shake were minted, 2 shake was returned', async () => {
     let currPrice = await Blender.currShakePrice()
     await MilkyWayToken.connect(wallet1).mint(wallet2.address,currPrice.mul(4))
 
@@ -184,19 +185,20 @@ describe('Blender - getMilkForShake', () => {
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
     }
 
-    // time period has finished. Try return 1 shake  
-    await expect(Blender.connect(wallet2).getMilkForShake(1)).to.be.reverted
+     //Try return 1 shake yet
+    await Blender.connect(wallet2).getMilkForShake(1)
 
-    expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(expandTo18Decimals(2))
+    expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(expandTo18Decimals(1))
     expect(await MilkyWayToken.balanceOf(wallet2.address)).
             to.eq((currPrice.mul(4)).sub(currPrice.mul(3)).sub((await Blender.SHAKE_PRICE_STEP()).mul(3))
+                    .add((await Blender.currShakePrice()).sub(await Blender.SHAKE_PRICE_STEP()))
                     .add((await Blender.currShakePrice()).sub(await Blender.SHAKE_PRICE_STEP())))
 
-    expect(await ShakeToken.totalSupply()).to.eq(expandTo18Decimals(2))
+    expect(await ShakeToken.totalSupply()).to.eq(expandTo18Decimals(1))
     expect(await MilkyWayToken.totalSupply()).
             to.eq(await MilkyWayToken.balanceOf(wallet2.address))
     expect(await ShakeToken.totalMinted()).to.eq(expandTo18Decimals(3))
-    expect(await ShakeToken.totalBurned()).to.eq(expandTo18Decimals(1))
+    expect(await ShakeToken.totalBurned()).to.eq(expandTo18Decimals(2))
   })
 
 })
