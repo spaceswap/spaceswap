@@ -79,18 +79,13 @@ yarn test
 
 ### Deploy
 #### Shake 
-Please specify the following parametrs when deploying:  
-`name` - full token name, for example **SHAKE token V1**  
-`symbol`  - token ticket, for example **SHAKE**  
-`maxSupply`  - amount of tokens totalSupply that may exist (!!! without decimals !!!),
-for example when 10000 will specified then `totalSupply` could be not more then `10000000000000000000000`
+No constructor params any more  
 
 #### Blender  
 Please specify the following parametrs when deploying:  
 `_milkAddress` -  MILK2 contract address
 `_shakeAddress` - SHAKE contract address 
 `_startFromBlock` - from this block Blender will start
-`_endAtBlock` - after this block Blender **will not work** !!!
 
 ### Frontend metrics
 Max Supply  - `ShakeToken.MAX_TOTAL_SUPPLY()`  
