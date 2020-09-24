@@ -780,38 +780,38 @@ contract Ownable is Context {
 pragma solidity 0.6.12;
 contract GovernanceContract is Ownable {
 
-  mapping(address => bool) public governanceContracts;
+    mapping(address => bool) public governanceContracts;
 
-  event GovernanceContractAdded(address addr);
-  event GovernanceContractRemoved(address addr);
+    event GovernanceContractAdded(address addr);
+    event GovernanceContractRemoved(address addr);
 
-  modifier onlyGovernanceContracts() {
-    require(governanceContracts[msg.sender]);
-    _;
-  }
-
-
-  function addAddressToGovernanceContract(address addr) onlyOwner public returns(bool success) {
-    if (!governanceContracts[addr]) {
-      governanceContracts[addr] = true;
-      emit GovernanceContractAdded(addr);
-      success = true;
+    modifier onlyGovernanceContracts() {
+        require(governanceContracts[msg.sender]);
+        _;
     }
-  }
 
 
-  function removeAddressFromGovernanceContract(address addr) onlyOwner public returns(bool success) {
-    if (governanceContracts[addr]) {
-      governanceContracts[addr] = false;
-      emit GovernanceContractRemoved(addr);
-      success = true;
+    function addAddressToGovernanceContract(address addr) onlyOwner public returns(bool success) {
+        if (!governanceContracts[addr]) {
+            governanceContracts[addr] = true;
+            emit GovernanceContractAdded(addr);
+            success = true;
+        }
     }
-  }
+
+
+    function removeAddressFromGovernanceContract(address addr) onlyOwner public returns(bool success) {
+        if (governanceContracts[addr]) {
+            governanceContracts[addr] = false;
+            emit GovernanceContractRemoved(addr);
+            success = true;
+        }
+    }
 }
 
 pragma solidity 0.6.12;
 // MilkyWayToken with Governance.
-contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
+contract MilkyWayToken is ERC20("MilkyWay Token by SpaceSwap v2", "MILK2"), GovernanceContract {
 
     uint256 private _totalBurned;
 
