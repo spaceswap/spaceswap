@@ -619,7 +619,7 @@ contract ShakeERC20 is  ERC20, MinterRole {
      * @return A boolean that indicates if the operation was successful.
      */
     function mint(address to, uint256 value) public onlyMinter returns (bool) {
-        require(totalSupply().add(value) <= MAX_TOTAL_SUPPLY, "Can`t mint more than MAX_TOTOAL_SUPPLY");
+        require(totalSupply().add(value) <= MAX_TOTAL_SUPPLY, "Can`t mint more than MAX_TOTAL_SUPPLY");
         _mint(to, value);
         totalMinted = totalMinted.add(value);
         return true;

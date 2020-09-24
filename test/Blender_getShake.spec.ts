@@ -15,8 +15,6 @@ import _Blender from '../build/Blender.json'
 chai.use(solidity)
 
 const MAX_TOTAL_SUPPLY = 10000
-const TEST_AMOUNT = 10
-const AMOUNT_MINT = 100
 
 const provider = new MockProvider({
     hardfork: 'istanbul',
@@ -25,7 +23,7 @@ const provider = new MockProvider({
   })
 const [walletOwner, walletGovernance, wallet1, wallet2] = provider.getWallets();
 
-describe('Blender', () => {  
+describe('Blender - getOneShake', () => {  
 
   let ShakeToken: Contract
   let MilkyWayToken: Contract
@@ -72,141 +70,54 @@ describe('Blender', () => {
     expect(await Blender.END_AT_BLOCK()).to.eq(100)
   })
 
-  /*it('block???', async () => {
-    let block = await provider.getBlock('latest');
-    console.log('block =', block.number)
-    for (let i = 0; i<50; i++) {
-      await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
-    }
-    let ww55 = await provider.getBlock('latest');
-    console.log('block =', ww55.number)
-  })*/
-
   it('getOneShake does not work - start block has not happened yet ', async () => {
-    let ww = await provider.getBlock('latest');
-    console.log('block =', ww.number)
     let currPrice = await Blender.currShakePrice()
     await MilkyWayToken.connect(wallet1).mint(wallet2.address,currPrice)
-    
-    let qq = await MilkyWayToken.balanceOf(wallet2.address)
-    let ee = await MilkyWayToken.totalSupply()
-    let rr = await ShakeToken.totalSupply()
-    console.log('balance_Milk=', qq.toString())
-    console.log('totalMilk=', ee.toString())
-    console.log('totalShake=', rr.toString())
-    console.log('currPrice=', currPrice.toString())
 
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice);
 
-    
     await expect(Blender.connect(wallet2).getOneShake()).to.be.reverted;
-    
-    let qq1 = await MilkyWayToken.balanceOf(wallet2.address)
-    console.log('balance_Milk=', qq1.toString())
-
-    let ww1 = await ShakeToken.balanceOf(wallet2.address)
-    let ee1 = await MilkyWayToken.totalSupply()
-    let rr1 = await ShakeToken.totalSupply()
-    let currPrice1 = await Blender.currShakePrice()
-    console.log('balance_Shake=', ww1.toString())
-    console.log('totalMilk=', ee1.toString())
-    console.log('totalShake=', rr1.toString())
-    console.log('currPrice1=', currPrice1.toString())
 
     expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(0)
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice)
-
     expect(await ShakeToken.totalSupply()).to.eq(0)
     expect(await MilkyWayToken.totalSupply()).to.eq(currPrice)
     expect(await Blender.currShakePrice()).to.eq(currPrice)
-    let ww2 = await provider.getBlock('latest');
-    console.log('block =', ww2.number)
+    expect(await ShakeToken.totalMinted()).to.eq(0)
+    expect(await ShakeToken.totalBurned()).to.eq(0)
   })
 
 
   it('getOneShake does not work - milk balance is not enough ', async () => {
     //generate bloks - begin
-    let block = await provider.getBlock('latest');
-    console.log('block =', block.number)
     for (let i = 0; i<50; i++) {
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
     }
-    let ww55 = await provider.getBlock('latest');
-    console.log('block =', ww55.number)
     //generate bloks - end
 
     let currPrice = await Blender.currShakePrice()
     await MilkyWayToken.connect(wallet1).mint(wallet2.address,currPrice.sub(1))
-    
-    let qq = await MilkyWayToken.balanceOf(wallet2.address)
-    let ee = await MilkyWayToken.totalSupply()
-    let rr = await ShakeToken.totalSupply()
-    console.log('balance_Milk=', qq.toString())
-    console.log('totalMilk=', ee.toString())
-    console.log('totalShake=', rr.toString())
-    console.log('currPrice=', currPrice.toString())
 
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice.sub(1));
-
     
     await expect(Blender.connect(wallet2).getOneShake()).to.be.reverted
-    
-    let qq1 = await MilkyWayToken.balanceOf(wallet2.address)
-    console.log('balance_Milk=', qq1.toString())
-
-    let ww1 = await ShakeToken.balanceOf(wallet2.address)
-    let ee1 = await MilkyWayToken.totalSupply()
-    let rr1 = await ShakeToken.totalSupply()
-    let currPrice1 = await Blender.currShakePrice()
-    console.log('balance_Shake=', ww1.toString())
-    console.log('totalMilk=', ee1.toString())
-    console.log('totalShake=', rr1.toString())
-    console.log('currPrice1=', currPrice1.toString())
 
     expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(0)
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice.sub(1))
-
     expect(await ShakeToken.totalSupply()).to.eq(0)
     expect(await MilkyWayToken.totalSupply()).to.eq(currPrice.sub(1))
     expect(await Blender.currShakePrice()).to.eq(currPrice)
-    let ww2 = await provider.getBlock('latest');
-    console.log('block =', ww2.number)
+    expect(await ShakeToken.totalMinted()).to.eq(0)
+    expect(await ShakeToken.totalBurned()).to.eq(0)
   })
 
   it('getOneShake  has worked successfull - all conditions were done', async () => {
-    let ww = await provider.getBlock('latest');
-    console.log('block =', ww.number)
     let currPrice = await Blender.currShakePrice()
     await MilkyWayToken.connect(wallet1).mint(wallet2.address,currPrice)
     
-    let qq = await MilkyWayToken.balanceOf(wallet2.address)
-    let ee = await MilkyWayToken.totalSupply()
-    let rr = await ShakeToken.totalSupply()
-    console.log('balance_Milk=', qq.toString())
-    console.log('totalMilk=', ee.toString())
-    console.log('totalShake=', rr.toString())
-    console.log('currPrice=', currPrice.toString())
-
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice);
 
-    try {
-      await Blender.connect(wallet2).getOneShake();
-    } catch (error) {
-                               // throw new Error('New owner can not use owner grants');
-                                console.log("ERROR! - OK", error.toString());
-                    }
-    let qq1 = await MilkyWayToken.balanceOf(wallet2.address)
-    console.log('balance_Milk=', qq1.toString())
-
-
-    let ww1 = await ShakeToken.balanceOf(wallet2.address)
-    let ee1 = await MilkyWayToken.totalSupply()
-    let rr1 = await ShakeToken.totalSupply()
-    let currPrice1 = await Blender.currShakePrice()
-    console.log('balance_Shake=', ww1.toString())
-    console.log('totalMilk=', ee1.toString())
-    console.log('totalShake=', rr1.toString())
-    console.log('currPrice1=', currPrice1.toString())
+    await Blender.connect(wallet2).getOneShake();
 
     expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(expandTo18Decimals(1))
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(0)
@@ -214,57 +125,31 @@ describe('Blender', () => {
     expect(await ShakeToken.totalSupply()).to.eq(expandTo18Decimals(1))
     expect(await MilkyWayToken.totalSupply()).to.eq(0)
     expect(await Blender.currShakePrice()).to.eq(currPrice.add(await Blender.SHAKE_PRICE_STEP()))
-    let ww2 = await provider.getBlock('latest');
-    console.log('block =', ww2.number)
+    expect(await ShakeToken.totalMinted()).to.eq(expandTo18Decimals(1))
+    expect(await ShakeToken.totalBurned()).to.eq(0)
   })
 
   it('getOneShake does not work - the time is finished ', async () => {
     //generate bloks - begin
-    let block = await provider.getBlock('latest');
-    console.log('block =', block.number)
     for (let i = 0; i<50; i++) {
       await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
     }
-    let ww55 = await provider.getBlock('latest');
-    console.log('block =', ww55.number)
     //generate bloks - end
 
     let currPrice = await Blender.currShakePrice()
     await MilkyWayToken.connect(wallet1).mint(wallet2.address,currPrice)
-    
-    let qq = await MilkyWayToken.balanceOf(wallet2.address)
-    let ee = await MilkyWayToken.totalSupply()
-    let rr = await ShakeToken.totalSupply()
-    console.log('balance_Milk=', qq.toString())
-    console.log('totalMilk=', ee.toString())
-    console.log('totalShake=', rr.toString())
-    console.log('currPrice=', currPrice.toString())
 
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice);
 
-    
     await expect(Blender.connect(wallet2).getOneShake()).to.be.reverted;
-    
-    let qq1 = await MilkyWayToken.balanceOf(wallet2.address)
-    console.log('balance_Milk=', qq1.toString())
-
-    let ww1 = await ShakeToken.balanceOf(wallet2.address)
-    let ee1 = await MilkyWayToken.totalSupply()
-    let rr1 = await ShakeToken.totalSupply()
-    let currPrice1 = await Blender.currShakePrice()
-    console.log('balance_Shake=', ww1.toString())
-    console.log('totalMilk=', ee1.toString())
-    console.log('totalShake=', rr1.toString())
-    console.log('currPrice1=', currPrice1.toString())
 
     expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(0)
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice)
-
     expect(await ShakeToken.totalSupply()).to.eq(0)
     expect(await MilkyWayToken.totalSupply()).to.eq(currPrice)
     expect(await Blender.currShakePrice()).to.eq(currPrice)
-    let ww2 = await provider.getBlock('latest');
-    console.log('block =', ww2.number)
+    expect(await ShakeToken.totalMinted()).to.eq(0)
+    expect(await ShakeToken.totalBurned()).to.eq(0)
   })
 
 })
