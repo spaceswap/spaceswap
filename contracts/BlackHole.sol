@@ -1,10 +1,4 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.6.12;
-
-/**
- *Submitted for verification at Etherscan.io on 2020-09-03
-*/
-
 pragma solidity ^0.6.0;
 /*
  * @dev Provides information about the current execution context, including the
@@ -810,20 +804,11 @@ contract GovernanceContract is Ownable {
             success = true;
         }
     }
-
-
-    function isGovernanceContract(address _contract) public returns(bool) {
-        if (governanceContracts[_contract]) {
-            return true;
-        } else
-
-            return false;
-    }
 }
 
 pragma solidity 0.6.12;
 // MilkyWayToken with Governance.
-contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
+contract MilkyWayToken is ERC20("MilkyWay Token by SpaceSwap v2", "MILK2"), GovernanceContract {
 
     uint256 private _totalBurned;
 
@@ -1080,30 +1065,60 @@ contract MilkyWayToken is ERC20("MilkyWayToken", "MILK2"), GovernanceContract {
 }
 
 //
-contract BlackHole is MilkyWayToken {
-
-    // using SafeMath for uint256;
-    //using SafeERC20 for IERC20;
+contract BlackHole {
 
     MilkyWayToken public milk;
 
+    mapping (address =>uint256) public forgottenTokens;
+
+    uint256 totalForgotten;
+
+    uint256 private quoteVote;
+
+    event Oblivion(address spender, uint256 amount);
+
     constructor(MilkyWayToken _milk) public {
         milk = _milk;
+        totalForgotten = 0;
     }
 
     /**
     * @dev
     */
-    function checkGovernance() public returns(bool){
-        require(milk.isGovernanceContract(this.address));
+    function giveOblivion() external returns(bool) {
+        require(milk.balanceOf(msg.sender) >= quoteVote);
+        milk.burn(msg.sender, quoteVote);
+        forgottenTokens[msg.sender] += quoteVote;
+        totalForgotten += quoteVote;
+        emit Oblivion(msg.sender, quoteVote);
         return true;
     }
 
     /**
-    * @dev
-    */
-    function giveOblivion(uint256 _amount) external returns(bool) {
-        milk.burn(_amount, msg.sender);
-        return true;
+   * @dev
+   */
+    function setQuoteVote(uint256 _newQuote) onlyOwner {
+        quoteVote = _newQuote;
+    }
+
+    /**
+   * @dev
+   */
+    function getQuoteVote() public view returns(uint256) {
+        return quoteVote;
+    }
+
+    /**
+   * @dev
+   */
+    function getAddressBurned(address _spender) public view returns(uint256) {
+        return forgottenTokens[_spender];
+    }
+
+    /**
+       * @dev
+       */
+    function getTotalBurned() public view returns(uint256) {
+        return totalForgotten;
     }
 }
