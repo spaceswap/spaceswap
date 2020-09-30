@@ -1065,11 +1065,11 @@ contract MilkyWayToken is ERC20("MilkyWay Token by SpaceSwap v2", "MILK2"), Gove
 }
 
 //
-contract BlackHole {
+contract BlackHole is Ownable{
 
     MilkyWayToken public milk;
 
-    mapping (address =>uint256) public forgottenTokens;
+    mapping (address => bool) public burnedTokens;
 
     uint256 totalForgotten;
 
@@ -1087,8 +1087,9 @@ contract BlackHole {
     */
     function giveOblivion() external returns(bool) {
         require(milk.balanceOf(msg.sender) >= quoteVote);
+        require(!burnedTokens[msg.sender], "This user already burned");
         milk.burn(msg.sender, quoteVote);
-        forgottenTokens[msg.sender] += quoteVote;
+        burnedTokens[msg.sender] = true;
         totalForgotten += quoteVote;
         emit Oblivion(msg.sender, quoteVote);
         return true;
@@ -1097,7 +1098,7 @@ contract BlackHole {
     /**
    * @dev
    */
-    function setQuoteVote(uint256 _newQuote) onlyOwner {
+    function setQuoteVote(uint256 _newQuote) public onlyOwner {
         quoteVote = _newQuote;
     }
 
@@ -1111,8 +1112,8 @@ contract BlackHole {
     /**
    * @dev
    */
-    function getAddressBurned(address _spender) public view returns(uint256) {
-        return forgottenTokens[_spender];
+    function getAddressBurned(address _spender) public view returns(bool) {
+        return burnedTokens[_spender];
     }
 
     /**
@@ -1121,4 +1122,5 @@ contract BlackHole {
     function getTotalBurned() public view returns(uint256) {
         return totalForgotten;
     }
+
 }
