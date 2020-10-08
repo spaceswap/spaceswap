@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: UNLICENSED
+
 pragma solidity ^0.6.0;
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -1392,7 +1394,7 @@ contract Gravity is Ownable {
     address public distributor;
 
     // MILK tokens created per block.
-    uint256 public milkPerBlock = 200000000000000000;
+    uint256 public milkPerBlock = 2000000000000000000; // default 2 MILK
 
     // The block number when MILK mining starts.
     uint256 public startFirstPhaseBlock;
@@ -1432,7 +1434,7 @@ contract Gravity is Ownable {
         MilkyWayToken _milk,
         address _devAddr,
         address _distributor,
-        uint256 _startFirstPhaseBlock // 0
+        uint256 _startFirstPhaseBlock
     ) public {
         milk = _milk;
         devAddr = _devAddr;
@@ -1496,21 +1498,21 @@ contract Gravity is Ownable {
     }
 
 
-    function getCurrentMultiplier(uint256 _currentBlock) public view returns (uint256) {
+    function getCurrentBlockReward(uint256 _currentBlock) public view returns (uint256) {
         if (_currentBlock <= startFirstPhaseBlock) {
-            return 1;
+            return 0;
         }
         else if (_currentBlock <= startSecondPhaseBlock) {
-            return BONUS_MULTIPLIER_1;
+            return (BONUS_MULTIPLIER_1.mul(milkPerBlock)).div(1e19);
         }
         else if (_currentBlock <= startThirdPhaseBlock) {
-            return BONUS_MULTIPLIER_2;
+            return (BONUS_MULTIPLIER_2.mul(milkPerBlock)).div(1e19);
         }
         else if (_currentBlock <= bonusEndBlock) {
-            return BONUS_MULTIPLIER_3;
+            return (BONUS_MULTIPLIER_3.mul(milkPerBlock)).div(1e19);
         }
         else {
-            return 1;
+            return milkPerBlock.div(1e18);
         }
     }
 
