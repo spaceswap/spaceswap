@@ -1158,10 +1158,10 @@ contract MilkyWayToken is ERC20("MilkyWay Token by SpaceSwap v2", "MILK2"), Gove
     /// @notice A record of states for signing / validating signatures
     mapping (address => uint) public nonces;
 
-    /// @notice An event thats emitted when an account changes its delegate
+    /// @notice An event that's emitted when an account changes its delegate
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
 
-    /// @notice An event thats emitted when a delegate account's vote balance changes
+    /// @notice An event that's emitted when a delegate account's vote balance changes
     event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
 
     /**
@@ -1297,7 +1297,7 @@ contract MilkyWayToken is ERC20("MilkyWay Token by SpaceSwap v2", "MILK2"), Gove
 
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = _delegates[delegator];
-        uint256 delegatorBalance = balanceOf(delegator); // balance of underlying MILKYWAYs (not scaled);
+        uint256 delegatorBalance = balanceOf(delegator); // balance of underlying MILKYWAY (not scaled);
         _delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);
@@ -1360,7 +1360,7 @@ contract MilkyWayToken is ERC20("MilkyWay Token by SpaceSwap v2", "MILK2"), Gove
 
 /**
 // Note that it's ownable and the owner wields tremendous power. The ownership
-// will be transferred to a governance smart contract once MILKIWAY is sufficiently
+// will be transferred to a governance smart contract once MILKYWAY is sufficiently
 // distributed and the community can show to govern itself.
 //
 // Have fun reading it. Hopefully it's bug-free. God bless.
@@ -1378,13 +1378,13 @@ contract Gravity is Ownable {
     // Info of each pool.
     struct PoolInfo {
         IERC20 lpToken;           // Address of LP token contract.
-        uint256 allocPoint;       // How many allocation points assigned to this pool. MILKs to distribute per block.
-        uint256 lastRewardBlock;  // Last block number that MILKs distribution occurs.
-        uint256 accMilkPerShare; // Accumulated MILKs per share, times 1e12. See below.
+        uint256 allocPoint;       // How many allocation points assigned to this pool. MILK2s to distribute per block.
+        uint256 lastRewardBlock;  // Last block number that MILK2s distribution occurs.
+        uint256 accMilkPerShare; // Accumulated MILK2s per share, times 1e12. See below.
     }
 
 
-    // The MILKIWAY_TOKEN!
+    // The MILKYWAY_Token!
     MilkyWayToken public milk;
 
     // Dev address.
@@ -1393,22 +1393,22 @@ contract Gravity is Ownable {
     // Distribution address.
     address public distributor;
 
-    // MILK tokens created per block.
-    uint256 public milkPerBlock = 2000000000000000000; // default 2 MILK
+    // MILK2 tokens created per block.
+    uint256 public milkPerBlock = 2000000000000000000; // default 2 MILK2
 
-    // The block number when MILK mining starts.
+    // The block number when MILK2 mining starts.
     uint256 public startFirstPhaseBlock;
 
-    // The block number when MILK mining starts.
+    // The block number when MILK2 mining starts.
     uint256 public startSecondPhaseBlock;
 
-    // The block number when MILK mining starts.
+    // The block number when MILK2 mining starts.
     uint256 public startThirdPhaseBlock;
 
-    // Block number when bonus MILK period ends.
+    // Block number when bonus MILK2 period ends.
     uint256 public bonusEndBlock;
 
-    // Bonus multiplier for early milk makers.
+    // Bonus multiplier for early milk2 makers.
     uint256 public constant BONUS_MULTIPLIER_1 = 100; // first 10,000 blocks
 
     uint256 public constant BONUS_MULTIPLIER_2 = 50; // next 30,000 blocks
@@ -1445,7 +1445,7 @@ contract Gravity is Ownable {
         bonusEndBlock = startThirdPhaseBlock.add(60000);
     }
 
-
+    // view length of liquidity pools
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
     }
@@ -1468,7 +1468,7 @@ contract Gravity is Ownable {
     }
 
 
-    // Update the given pool's MILK allocation point. Can only be called by the owner.
+    // Update the given pool's MILK2 allocation point. Can only be called by the owner.
     function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) public onlyOwner {
         if (_withUpdate) {
             massUpdatePools();
@@ -1497,7 +1497,7 @@ contract Gravity is Ownable {
         }
     }
 
-
+    // View current block reward in MILK2s
     function getCurrentBlockReward(uint256 _currentBlock) public view returns (uint256) {
         if (_currentBlock <= startFirstPhaseBlock) {
             return 0;
@@ -1517,7 +1517,7 @@ contract Gravity is Ownable {
     }
 
 
-    // View function to see pending MILKs on frontend.
+    // View function to see pending MILK2s on frontend.
     function pendingMilk(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
@@ -1612,7 +1612,7 @@ contract Gravity is Ownable {
     }
 
 
-    // Safe milk transfer function, just in case if rounding error causes pool to not have enough MILKs.
+    // Safe milk2 transfer function, just in case if rounding error causes pool to not have enough MILK2s.
     function safeMilkTransfer(address _to, uint256 _amount) internal {
         uint256 milkBal = milk.balanceOf(address(this));
         if (_amount > milkBal) {
