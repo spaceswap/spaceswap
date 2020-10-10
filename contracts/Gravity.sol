@@ -1393,9 +1393,6 @@ contract Gravity is Ownable {
     // Distribution address.
     address public distributor;
 
-    // MILK2 tokens created per block.
-    uint256 private milkPerBlock = 200000000000000000; // default 2 MILK2
-
     // The block number when MILK2 mining starts.
     uint256 public startFirstPhaseBlock;
 
@@ -1409,11 +1406,7 @@ contract Gravity is Ownable {
     uint256 public bonusEndBlock;
 
     // Bonus multiplier for early milk2 makers.
-    uint256 private constant BONUS_MULTIPLIER_1 = 100; // first 10,000 blocks
-
-    uint256 private constant BONUS_MULTIPLIER_2 = 50; // next 30,000 blocks
-
-    uint256 private constant BONUS_MULTIPLIER_3 = 25; // last 60,000 blocks
+    uint256[4] private milkPerBlocks = [20, 10, 5, 2];
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -1481,27 +1474,22 @@ contract Gravity is Ownable {
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
         if (_to <= startFirstPhaseBlock) { // 0
-            return  _to.sub(_from); // x1
+            return  _to.sub(_from).mul(milkPerBlocks[3]);
         }
         else if (_to <= startSecondPhaseBlock) { // + 10,000 blocks
-            return _to.sub(_from).mul(BONUS_MULTIPLIER_1); // x10
+            return _to.sub(_from).mul(milkPerBlocks[0]);
         }
         else if (_to <= startThirdPhaseBlock) { // + 40,000 blocks
-            return _to.sub(_from).mul(BONUS_MULTIPLIER_2); //x5
+            return _to.sub(_from).mul(milkPerBlocks[1]);
         }
         else if (_to <= bonusEndBlock) { // + 40,000 blocks
-            return _to.sub(_from).mul(BONUS_MULTIPLIER_3); // x2,5
+            return _to.sub(_from).mul(milkPerBlocks[2]);
         }
         else  { // + 100,000 blocks
-            return _to.sub(_from);
+            return _to.sub(_from).mul(milkPerBlocks[3]);
         }
     }
 
-
-
-    function getMilkPerBlock() public view returns(uint256) {
-        return milkPerBlock.mul(10);
-    }
 
     // View current block reward in MILK2s
     function getCurrentBlockReward(uint256 _currentBlock) public view returns (uint256) {
@@ -1509,16 +1497,16 @@ contract Gravity is Ownable {
             return 0;
         }
         else if (_currentBlock <= startSecondPhaseBlock) {
-            return (BONUS_MULTIPLIER_1.mul(milkPerBlock)).div(1e18);
+            return milkPerBlocks[0];
         }
         else if (_currentBlock <= startThirdPhaseBlock) {
-            return (BONUS_MULTIPLIER_2.mul(milkPerBlock)).div(1e18);
+            return milkPerBlocks[1];
         }
         else if (_currentBlock <= bonusEndBlock) {
-            return (BONUS_MULTIPLIER_3.mul(milkPerBlock)).div(1e18);
+            return milkPerBlocks[2];
         }
         else {
-            return milkPerBlock.div(1e17);
+            return milkPerBlocks[3];
         }
     }
 
@@ -1532,7 +1520,7 @@ contract Gravity is Ownable {
 
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-            uint256 milkReward = multiplier.mul(milkPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+            uint256 milkReward = (multiplier.mul(1e18)).mul(pool.allocPoint).div(totalAllocPoint);
             accMilkPerShare = accMilkPerShare.add(milkReward.mul(1e12).div(lpSupply));
         }
 
@@ -1565,7 +1553,7 @@ contract Gravity is Ownable {
         }
 
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-        uint256 milkReward = multiplier.mul(milkPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
+        uint256 milkReward = multiplier.mul(1e18).mul(pool.allocPoint).div(totalAllocPoint);
         milk.mint(devAddr, milkReward.mul(3).div(100)); // 3% developers
         milk.mint(distributor, milkReward.div(100)); // 1% shakeHolders
         milk.mint(address(this), milkReward);
