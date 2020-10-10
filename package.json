@@ -10,6 +10,12 @@
     "contracts",
     "build"
   ],
+
+  "dependencies": {
+    "@uniswap/lib": "1.1.4",
+    "@uniswap/v2-core": "1.0.1",
+    "@uniswap/v2-periphery": "1.1.0-beta.0"
+  },
   "engines": {
     "node": ">=10"
   },
@@ -34,7 +40,7 @@
     "precompile": "yarn clean",
     "compile": "waffle .waffle.json",
     "pretest": "yarn compile",
-    "test": "mocha",
+    "test": "mocha --timeout 20000",
     "prepublishOnly": "yarn test"
   },
   "license": "GPL-3.0-or-later"
