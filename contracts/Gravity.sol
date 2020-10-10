@@ -1394,7 +1394,7 @@ contract Gravity is Ownable {
     address public distributor;
 
     // MILK2 tokens created per block.
-    uint256 public milkPerBlock = 2000000000000000000; // default 2 MILK2
+    uint256 private milkPerBlock = 200000000000000000; // default 2 MILK2
 
     // The block number when MILK2 mining starts.
     uint256 public startFirstPhaseBlock;
@@ -1409,11 +1409,11 @@ contract Gravity is Ownable {
     uint256 public bonusEndBlock;
 
     // Bonus multiplier for early milk2 makers.
-    uint256 public constant BONUS_MULTIPLIER_1 = 100; // first 10,000 blocks
+    uint256 private constant BONUS_MULTIPLIER_1 = 100; // first 10,000 blocks
 
-    uint256 public constant BONUS_MULTIPLIER_2 = 50; // next 30,000 blocks
+    uint256 private constant BONUS_MULTIPLIER_2 = 50; // next 30,000 blocks
 
-    uint256 public constant BONUS_MULTIPLIER_3 = 25; // last 60,000 blocks
+    uint256 private constant BONUS_MULTIPLIER_3 = 25; // last 60,000 blocks
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -1497,22 +1497,28 @@ contract Gravity is Ownable {
         }
     }
 
+
+
+    function getMilkPerBlock() public view returns(uint256) {
+        return milkPerBlock.mul(10);
+    }
+
     // View current block reward in MILK2s
     function getCurrentBlockReward(uint256 _currentBlock) public view returns (uint256) {
         if (_currentBlock <= startFirstPhaseBlock) {
             return 0;
         }
         else if (_currentBlock <= startSecondPhaseBlock) {
-            return (BONUS_MULTIPLIER_1.mul(milkPerBlock)).div(1e19);
+            return (BONUS_MULTIPLIER_1.mul(milkPerBlock)).div(1e18);
         }
         else if (_currentBlock <= startThirdPhaseBlock) {
-            return (BONUS_MULTIPLIER_2.mul(milkPerBlock)).div(1e19);
+            return (BONUS_MULTIPLIER_2.mul(milkPerBlock)).div(1e18);
         }
         else if (_currentBlock <= bonusEndBlock) {
-            return (BONUS_MULTIPLIER_3.mul(milkPerBlock)).div(1e19);
+            return (BONUS_MULTIPLIER_3.mul(milkPerBlock)).div(1e18);
         }
         else {
-            return milkPerBlock.div(1e18);
+            return milkPerBlock.div(1e17);
         }
     }
 
