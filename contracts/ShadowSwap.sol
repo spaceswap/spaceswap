@@ -638,12 +638,23 @@ library SafeERC20 {
     }
 }
 
+
+
+pragma solidity ^0.6.12;
+
+interface IMilk2Token {
+
+    function mint(address _to, uint256 _amount) external returns (bool);
+
+    function burn(address _to, uint256 _amount) external returns (bool);
+
+}
+
 contract ShadowHarvester is Ownable, SolRsaVerify {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     struct UserInfo {
-        uint256 amount;
         uint256 rewardDebt;
         uint256 lastBlock;
     }
