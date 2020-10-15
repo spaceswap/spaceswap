@@ -645,6 +645,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     struct UserInfo {
         uint256 amount;
         uint256 rewardDebt;
+        uint256 lastBlock;
     }
 
 
@@ -653,71 +654,99 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
         uint256 allocPoint;
     }
 
+
+    //mapping(address => uint256) lastHarvestSaveBlock;
+
+    //mapping(address => uint256) harvestSum;
+
+    mapping (uint256 => mapping (address => UserInfo)) public userInfo;
+
+
+    PoolInfo[] public poolInfo;
+
     bool[] private enableKeys;
 
     bytes[] private availableKeys;
 
-    mapping(address => uint256) lastHarvestSaveBlock;
-
-    mapping(address => uint256) harvestSum;
-
-    mapping (uint256 => mapping (address => UserInfo)) public userInfo;
-
-    PoolInfo[] public poolInfo;
 
     address public token;
 
-    event Harvest();
-    event AddNewPool();
+    uint256 public totalPoints;
+
+    event Harvest(address sender, uint256 amount, uint256 blockNumber);
+    event AddNewPool(address token, uint256 pid);
+    event PoolUpdate(uint256 poolPid, uint256 previusPoints, uint256 newPoints);
+
 
     constructor(address _milk) public {
         token = _milk;
     }
 
 
-    function addNewPool(address _lpToken) public onlyOwner {
-
+    // Add a new lp to the pool. Can only be called by the owner.
+    // DO NOT add the same LP token more than once. Rewards will be messed up if you do.
+    function addNewPool(IERC20 _lpToken, uint256 _newPoints) public onlyOwner {
+        totalPoints = totalPoints.add(_newPoints);
+        poolInfo.push(PoolInfo({lpToken: _lpToken, allocPoint: _newPoints}));
+        emit AddNewPool(address(_lpToken), _newPoints);
     }
 
 
-    function setPoll() public onlyOwner {
+    //  Update the given pool's allocation point. Can only be called by the owner.
+    function setPoll(uint256 _poolPid, uint256 _newPoints) public onlyOwner {
+        PoolInfo memory _poolInfo = poolInfo[_poolPid];
+        uint256 _previusPoints = poolInfo[_poolPid].allocPoint;
+        _poolInfo.allocPoint = _newPoints;
 
+        totalPoints = totalPoints.sub(poolInfo[_poolPid].allocPoint).add(_newPoints);
+        emit PoolUpdate(_poolPid, _previusPoints, _newPoints);
     }
 
 
-    function harvest(uint256 i,
+
+    //
+    function withdraw(uint256 i,
         uint256 amount,
         uint256 lastBlockNumber,
         uint256 currentBlockNumber,
+        uint256 _poolPid,
         bytes memory signi) public {
         bytes32 _data = keccak256(abi.encode(amount, lastBlockNumber, currentBlockNumber));
         bytes memory _e;
         address userAddress;
-        uint256 savedBlockInData;
+        //uint256 savedBlockInData; // todo
 
         require(pkcs1Sha256Verify(_data, signi, _e, availableKeys[i]) == 0, "Incorrect data");
-        //require(userAddress == msg.sender, "Message sender isn't signer");
-        //require(savedBlockInData == lastBlockNumber, "")
         require(currentBlockNumber < block.number, " ");
 
-        //IERC20(token).transferFrom(this, _sender, amount);
-        lastHarvestSaveBlock[userAddress] = currentBlockNumber;
-        harvestSum[userAddress] = harvestSum[userAddress].add(amount);
+        //require(userAddress == msg.sender, "Message sender isn't signer");
+        //require(savedBlockInData == lastBlockNumber, "")
+
+        UserInfo memory _userInfo = userInfo[_poolPid][msg.sender];
+        IERC20(token).transferFrom(address(this), msg.sender, amount);
+
+        _userInfo.rewardDebt = _userInfo.rewardDebt.add(amount);
+        _userInfo.lastBlock = currentBlockNumber;
+
+        emit Harvest(msg.sender, amount, currentBlockNumber);
     }
 
 
-    function GetPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _weignt) {
+    //
+    function GetPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _weight) {
         PoolInfo memory _poolInfo = poolInfo[_poolPid];
         _lpToken = address(_poolInfo.lpToken);
-        _weignt = _poolInfo.allocPoint;
+        _weight = _poolInfo.allocPoint;
     }
 
 
+    //
     function GetPoolsCount() public view returns(uint256) {
         return poolInfo.length;
     }
 
 
+    //
     function getTotalRevards(address _user) public view returns(uint256) {
         uint256 _totalRewards;
         for(uint256 i = 0; i < poolInfo.length; ++i) {
@@ -727,25 +756,33 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     }
 
 
-    function getLastBlock(address _sender) public view returns(uint256) {
-        return 0;
+    //
+    function getLastBlock(address _sender, uint256 _poolPid) public view returns(uint256) {
+        return userInfo[_poolPid][_sender].lastBlock;
     }
 
 
-    function getVerifyKey(uint256 _id) public view returns (bytes32 e, uint256 n, bool status) {
+    //
+    //function getVerifyKey(uint256 _id) public view returns (bytes32 e, uint256 n, bool status) {
+    //
+    //}
 
-    }
 
+    //
     function  addNewKey(bytes memory e /*, uint256 n */) public onlyOwner returns(uint256 _id) {
         availableKeys.push(e);
         return availableKeys.length - 1;
     }
 
+
+    //
     function  enableKey(uint256 _id) public onlyOwner {
         require(!enableKeys[_id], "This key already enable");
         enableKeys[_id] = true;
     }
 
+
+    //
     function  disableKey(uint256 _id) public onlyOwner {
         require(enableKeys[_id], "This key already disable");
         enableKeys[_id] = false;
