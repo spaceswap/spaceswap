@@ -688,6 +688,32 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     }
 
 
+    function GetPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _weignt) {
+        PoolInfo memory _poolInfo = poolInfo[_poolPid];
+        _lpToken = address(_poolInfo.lpToken);
+        _weignt = _poolInfo.allocPoint;
+    }
+
+
+    function GetPoolsCount() public view returns(uint256) {
+        return poolInfo.length;
+    }
+
+
+    function getTotalRevards(address _user) public view returns(uint256) {
+        uint256 _totalRewards;
+        for(uint256 i = 0; i < poolInfo.length; ++i) {
+            _totalRewards = _totalRewards.add(userInfo[i][_user].rewardDebt);
+        }
+        return _totalRewards;
+    }
+
+
+    function getLastBlock(address _sender) public view returns(uint256) {
+        return 0;
+    }
+
+
     function getVerifyKey(uint256 _id) public view returns (bytes32 e, uint256 n, bool status) {
 
     }
