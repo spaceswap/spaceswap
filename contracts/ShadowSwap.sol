@@ -661,11 +661,29 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
     mapping(address => uint256) harvestSum;
 
+    mapping (uint256 => mapping (address => UserInfo)) public userInfo;
+
+    PoolInfo[] public poolInfo;
+
     address public token;
 
-    constructor(address _token) public {
-        token = _token;
+    event Harvest();
+    event AddNewPool();
+
+    constructor(address _milk) public {
+        token = _milk;
     }
+
+
+    function addNewPool(address _lpToken) public onlyOwner {
+
+    }
+
+
+    function setPoll() public onlyOwner {
+
+    }
+
 
     function harvest(uint256 i,
         uint256 amount,
