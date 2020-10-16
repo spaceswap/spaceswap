@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.6.0;
+pragma solidity ^0.6.12;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -638,10 +638,6 @@ library SafeERC20 {
     }
 }
 
-
-
-pragma solidity ^0.6.12;
-
 interface IMilk2Token {
 
     function mint(address _to, uint256 _amount) external returns (bool);
@@ -695,8 +691,14 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     }
 
 
-    // Add a new lp to the pool. Can only be called by the owner.
-    // DO NOT add the same LP token more than once. Rewards will be messed up if you do.
+    /**
+      * @dev Add a new lp to the pool.
+      *
+      * @param _lpToken - address of ERC-20 LP token
+       * @param _newPoints - share in the total amount of rewards
+      * DO NOT add the same LP token more than once. Rewards will be messed up if you do.
+      * Can only be called by the current owner.
+      */
     function addNewPool(IERC20 _lpToken, uint256 _newPoints) public onlyOwner {
         totalPoints = totalPoints.add(_newPoints);
         poolInfo.push(PoolInfo({lpToken: _lpToken, allocPointAmount: _newPoints}));
@@ -704,7 +706,14 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     }
 
 
-    //  Update the given pool's allocation point. Can only be called by the owner.
+    /**
+     * @dev Add a new lp to the pool.
+     *
+      * @param _poolPid - number of pool
+      * @param _newPoints - new amount of allocation points
+     * DO NOT add the same LP token more than once. Rewards will be messed up if you do.
+     * Can only be called by the current owner.
+     */
     function setPoll(uint256 _poolPid, uint256 _newPoints) public onlyOwner {
         PoolInfo memory _poolInfo = poolInfo[_poolPid];
         uint256 _previousPoints = poolInfo[_poolPid].allocPointAmount;
@@ -715,92 +724,143 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     }
 
 
-
-    //
-    function withdraw(  uint256 i,
-        uint256 amount,
-        uint256 lastBlockNumber,
-        uint256 currentBlockNumber,
+    /**
+      * @dev Update the given pool's allocation point. Can only be called by the owner.
+      *
+      * @param _keyId -
+      * @param _amount -
+      * @param _lastBlockNumber -
+      * @param _currentBlockNumber -
+      * @param _poolPid -
+      * @param _signi -
+      *
+      */
+    function withdraw(  uint256 _keyId,
+        uint256 _amount,
+        uint256 _lastBlockNumber,
+        uint256 _currentBlockNumber,
         uint256 _poolPid,
-        bytes memory signi) public {
-        bytes32 _data = keccak256(abi.encode(amount, lastBlockNumber, currentBlockNumber));
+        bytes memory _signi) public {
+        require(_keyId < keyInfo.length , "This key is not exist");
+        require(keyInfo[_keyId].keyStatus, "This key is disable");
+        require(_currentBlockNumber < block.number, "_currentBlockNumber cannot be larger than the last block");
+
+        bytes32 _data = keccak256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber));
         bytes memory _e;
 
-        require(pkcs1Sha256Verify(_data, signi, _e, keyInfo[i].keyHash) == 0, "Incorrect data");
-        require(currentBlockNumber < block.number, " ");
+        require(pkcs1Sha256Verify(_data, _signi, _e, keyInfo[_keyId].keyHash) == 0, "Incorrect data");
 
         //require(userAddress == msg.sender, "Message sender isn't signer");
         //require(savedBlockInData == lastBlockNumber, "")
 
         UserInfo memory _userInfo = userInfo[_poolPid][msg.sender];
-        milk.mint(msg.sender, amount);
+        milk.mint(msg.sender, _amount);
 
-        _userInfo.rewardDebt = _userInfo.rewardDebt.add(amount);
-        _userInfo.lastBlock = currentBlockNumber;
+        _userInfo.rewardDebt = _userInfo.rewardDebt.add(_amount);
+        _userInfo.lastBlock = _currentBlockNumber;
 
-        emit Harvest(msg.sender, amount, currentBlockNumber);
+        emit Harvest(msg.sender, _amount, _currentBlockNumber);
     }
 
 
-    //
-    function GetPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _weight) {
+    /**
+      * @dev - return info about pool - LP address and allocation points
+      */
+    function getPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _weight) {
         PoolInfo memory _poolInfo = poolInfo[_poolPid];
         _lpToken = address(_poolInfo.lpToken);
         _weight = _poolInfo.allocPointAmount;
     }
 
 
-    //
-    function GetPoolsCount() public view returns(uint256) {
+    /**
+      * @dev - return Number of keys
+      */
+    function getPoolsCount() public view returns(uint256) {
         return poolInfo.length;
     }
 
 
-    //
+    /**
+      * @dev - return info about current user's reward
+      * @param _poolPid - number of pool
+      * @param _user - user's address
+      */
     function getRewards(uint256 _poolPid, address _user) public view returns(uint256) {
         return  userInfo[_poolPid][_user].rewardDebt;
     }
 
 
-    //
-    function getLastBlock(address _sender, uint256 _poolPid) public view returns(uint256) {
-        return userInfo[_poolPid][_sender].lastBlock;
+    /**
+      * @dev - return info about user's last block with update
+      * @param _poolPid - number of pool
+      * @param _user - user's address
+      */
+    function getLastBlock(uint256 _poolPid, address _user) public view returns(uint256) {
+        return userInfo[_poolPid][_user].lastBlock;
     }
 
 
-    //
-    function  addNewKey(bytes memory e) public onlyOwner returns(uint256) {
-        keyInfo.push(KeyInfo({keyHash: e, keyStatus: true}));
-        emit AddNewKey(e, keyInfo.length - 1);
+    /**
+      * @dev
+      *
+      * @param _newKey - new keyHash
+      * Can only be called by the current owner.
+      */
+    function addNewKey(bytes memory _newKey) public onlyOwner returns(uint256) {
+        keyInfo.push(KeyInfo({keyHash: _newKey, keyStatus: true}));
+        emit AddNewKey(_newKey, keyInfo.length - 1);
         return keyInfo.length - 1;
     }
 
 
-    //
-    function  enableKey(uint256 _id) public onlyOwner {
-        require(!keyInfo[_id].keyStatus, "This key already enable");
-        keyInfo[_id].keyStatus = true;
+    /**
+      * @dev
+      *
+      * @param _keyId - available public key for signing.
+      * Can only be called by the current owner.
+      */
+    function enableKey(uint256 _keyId) public onlyOwner {
+        require(!keyInfo[_keyId].keyStatus, "This key already enable");
+        keyInfo[_keyId].keyStatus = true;
     }
 
 
-    //
-    function  disableKey(uint256 _id) public onlyOwner {
-        require(keyInfo[_id].keyStatus, "This key already disable");
-        keyInfo[_id].keyStatus = false;
+    /**
+      * @dev
+      *
+      * @param _keyId - available public key for signing.
+      * Can only be called by the current owner.
+      */
+    function disableKey(uint256 _keyId) public onlyOwner {
+        require(keyInfo[_keyId].keyStatus, "This key already disable");
+        keyInfo[_keyId].keyStatus = false;
     }
 
 
-    //
-    function getKeyInfo(uint256 _id) public view returns(bytes memory  _key, bool _status) {
-        _key = keyInfo[_id].keyHash;
-        _status = keyInfo[_id].keyStatus;
+    /**
+      * @dev Return info about available key
+      *
+      * @param _keyId - available public key for signing
+      */
+    function getKeyInfo(uint256 _keyId) public view returns(bytes memory  _key, bool _status) {
+        _key = keyInfo[_keyId].keyHash;
+        _status = keyInfo[_keyId].keyStatus;
     }
 
 
-    //
+    /**
+      * @dev - return Number of keys
+      */
     function getKeyCount() public view returns(uint256) {
         return keyInfo.length;
     }
 
-    // todo - add 2 pools
+    /**
+    * @dev - return total allocation points
+    */
+    function getTotalPoints() public view returns(uint256) {
+        return totalPoints;
+    }
+
 }
