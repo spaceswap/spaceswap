@@ -670,14 +670,14 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
     IMilk2Token public milk;
 
-    mapping (uint256 => mapping (address => UserInfo)) public userInfo;
+    mapping (uint256 => mapping (address => UserInfo)) private userInfo;
 
-    PoolInfo[] public poolInfo;
+    PoolInfo[] private poolInfo;
 
-    KeyInfo[] public keyInfo;
+    KeyInfo[] private keyInfo;
 
 
-    uint256 public totalPoints;
+    uint256 private totalPoints;
 
     event Harvest(address sender, uint256 amount, uint256 blockNumber);
     event AddNewPool(address token, uint256 pid);
