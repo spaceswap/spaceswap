@@ -664,9 +664,9 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
     struct KeyInfo{
         bytes keyHash;
+        bytes exponent;
         bool keyStatus;
     }
-
 
     IMilk2Token public milk;
 
@@ -676,14 +676,12 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
     KeyInfo[] private keyInfo;
 
-
     uint256 private totalPoints;
 
     event Harvest(address sender, uint256 amount, uint256 blockNumber);
     event AddNewPool(address token, uint256 pid);
     event PoolUpdate(uint256 poolPid, uint256 previusPoints, uint256 newPoints);
     event AddNewKey(bytes keyHash, uint256 id);
-
 
 
     constructor(IMilk2Token _milk) public {
@@ -732,32 +730,26 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
       * @param _lastBlockNumber -
       * @param _currentBlockNumber -
       * @param _poolPid -
-      * @param _signi -
+      * @param _sign -
       *
       */
     function withdraw(  uint256 _keyId,
-        uint256 _amount,
-        uint256 _lastBlockNumber,
-        uint256 _currentBlockNumber,
-        uint256 _poolPid,
-        bytes memory _signi) public {
+                        uint256 _amount,
+                        uint256 _lastBlockNumber,
+                        uint256 _currentBlockNumber,
+                        uint256 _poolPid,
+                        bytes memory _sign) public {
         require(_keyId < keyInfo.length , "This key is not exist");
         require(keyInfo[_keyId].keyStatus, "This key is disable");
         require(_currentBlockNumber < block.number, "_currentBlockNumber cannot be larger than the last block");
 
         bytes32 _data = keccak256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber));
-        bytes memory _e;
-
-        require(pkcs1Sha256Verify(_data, _signi, _e, keyInfo[_keyId].keyHash) == 0, "Incorrect data");
-
-        //require(userAddress == msg.sender, "Message sender isn't signer");
-        //require(savedBlockInData == lastBlockNumber, "")
+        require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyHash) == 0, "Incorrect data");
 
         UserInfo memory _userInfo = userInfo[_poolPid][msg.sender];
-        milk.mint(msg.sender, _amount);
-
         _userInfo.rewardDebt = _userInfo.rewardDebt.add(_amount);
         _userInfo.lastBlock = _currentBlockNumber;
+        milk.mint(msg.sender, _amount);
 
         emit Harvest(msg.sender, _amount, _currentBlockNumber);
     }
@@ -807,8 +799,8 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
       * @param _newKey - new keyHash
       * Can only be called by the current owner.
       */
-    function addNewKey(bytes memory _newKey) public onlyOwner returns(uint256) {
-        keyInfo.push(KeyInfo({keyHash: _newKey, keyStatus: true}));
+    function addNewKey(bytes memory _newKey, bytes memory _keyExponent) public onlyOwner returns(uint256) {
+        keyInfo.push(KeyInfo({keyHash: _newKey, exponent: _keyExponent, keyStatus: true}));
         emit AddNewKey(_newKey, keyInfo.length - 1);
         return keyInfo.length - 1;
     }
@@ -843,8 +835,9 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
       *
       * @param _keyId - available public key for signing
       */
-    function getKeyInfo(uint256 _keyId) public view returns(bytes memory  _key, bool _status) {
+    function getKeyInfo(uint256 _keyId) public view returns(bytes memory _key, bytes memory _exponent, bool _status) {
         _key = keyInfo[_keyId].keyHash;
+        _exponent = keyInfo[_keyId].exponent;
         _status = keyInfo[_keyId].keyStatus;
     }
 
