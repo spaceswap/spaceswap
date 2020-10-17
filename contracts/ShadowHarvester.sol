@@ -688,7 +688,6 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
         milk = _milk;
     }
 
-
     /**
       * @dev Add a new lp to the pool.
       *
@@ -723,41 +722,8 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
 
     /**
-      * @dev Update the given pool's allocation point. Can only be called by the owner.
-      *
-      * @param _keyId -
-      * @param _amount -
-      * @param _lastBlockNumber -
-      * @param _currentBlockNumber -
-      * @param _poolPid -
-      * @param _sign -
-      *
-      */
-    function withdraw(  uint256 _keyId,
-                        uint256 _amount,
-                        uint256 _lastBlockNumber,
-                        uint256 _currentBlockNumber,
-                        uint256 _poolPid,
-                        bytes memory _sign) public {
-        require(_keyId < keyInfo.length , "This key is not exist");
-        require(keyInfo[_keyId].keyStatus, "This key is disable");
-        require(_currentBlockNumber < block.number, "_currentBlockNumber cannot be larger than the last block");
-
-        bytes32 _data = keccak256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber));
-        require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyHash) == 0, "Incorrect data");
-
-        UserInfo memory _userInfo = userInfo[_poolPid][msg.sender];
-        _userInfo.rewardDebt = _userInfo.rewardDebt.add(_amount);
-        _userInfo.lastBlock = _currentBlockNumber;
-        milk.mint(msg.sender, _amount);
-
-        emit Harvest(msg.sender, _amount, _currentBlockNumber);
-    }
-
-
-    /**
-      * @dev - return info about pool - LP address and allocation points
-      */
+         * @dev - return info about pool - LP address and allocation points
+         */
     function getPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _weight) {
         PoolInfo memory _poolInfo = poolInfo[_poolPid];
         _lpToken = address(_poolInfo.lpToken);
@@ -790,6 +756,47 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
       */
     function getLastBlock(uint256 _poolPid, address _user) public view returns(uint256) {
         return userInfo[_poolPid][_user].lastBlock;
+    }
+
+
+    /**
+    * @dev - return total allocation points
+    */
+    function getTotalPoints() public view returns(uint256) {
+        return totalPoints;
+    }
+
+
+    /**
+      * @dev Update the given pool's allocation point. Can only be called by the owner.
+      *
+      * @param _keyId -
+      * @param _amount -
+      * @param _lastBlockNumber -
+      * @param _currentBlockNumber -
+      * @param _poolPid -
+      * @param _sign -
+      *
+      */
+    function withdraw(  uint256 _keyId,
+                        uint256 _amount,
+                        uint256 _lastBlockNumber,
+                        uint256 _currentBlockNumber,
+                        uint256 _poolPid,
+                        bytes memory _sign) public {
+        require(_keyId < keyInfo.length , "This key is not exist");
+        require(keyInfo[_keyId].keyStatus, "This key is disable");
+        require(_currentBlockNumber < block.number, "_currentBlockNumber cannot be larger than the last block");
+
+        bytes32 _data = keccak256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber));
+        require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyHash) == 0, "Incorrect data");
+
+        UserInfo storage _userInfo = userInfo[_poolPid][msg.sender];
+        _userInfo.rewardDebt = _userInfo.rewardDebt.add(_amount);
+        _userInfo.lastBlock = _currentBlockNumber;
+        milk.mint(msg.sender, _amount);
+
+        emit Harvest(msg.sender, _amount, _currentBlockNumber);
     }
 
 
@@ -847,13 +854,6 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
       */
     function getKeyCount() public view returns(uint256) {
         return keyInfo.length;
-    }
-
-    /**
-    * @dev - return total allocation points
-    */
-    function getTotalPoints() public view returns(uint256) {
-        return totalPoints;
     }
 
 }
