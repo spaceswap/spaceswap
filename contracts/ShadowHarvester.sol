@@ -659,6 +659,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     struct PoolInfo {
         IERC20 lpToken;
         uint256 allocPointAmount;
+        uint256 blockCreation;
     }
 
 
@@ -670,7 +671,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
     IMilk2Token public milk;
 
-    mapping (uint256 => mapping (address => UserInfo)) private userInfo;
+    mapping (address => UserInfo) private userInfo;
 
     PoolInfo[] private poolInfo;
 
@@ -698,7 +699,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
       */
     function addNewPool(IERC20 _lpToken, uint256 _newPoints) public onlyOwner {
         totalPoints = totalPoints.add(_newPoints);
-        poolInfo.push(PoolInfo({lpToken: _lpToken, allocPointAmount: _newPoints}));
+        poolInfo.push(PoolInfo({lpToken: _lpToken, allocPointAmount: _newPoints, blockCreation:block.number}));
         emit AddNewPool(address(_lpToken), _newPoints);
     }
 
@@ -724,10 +725,11 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     /**
          * @dev - return info about pool - LP address and allocation points
          */
-    function getPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _weight) {
+    function getPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _weight, uint256 _block) {
         PoolInfo memory _poolInfo = poolInfo[_poolPid];
         _lpToken = address(_poolInfo.lpToken);
         _weight = _poolInfo.allocPointAmount;
+        _block = _poolInfo.blockCreation;
     }
 
 
@@ -741,21 +743,20 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
     /**
       * @dev - return info about current user's reward
-      * @param _poolPid - number of pool
       * @param _user - user's address
       */
-    function getRewards(uint256 _poolPid, address _user) public view returns(uint256) {
-        return  userInfo[_poolPid][_user].rewardDebt;
+    function getRewards(address _user) public view returns(uint256) {
+        return  userInfo[_user].rewardDebt;
     }
 
 
     /**
       * @dev - return info about user's last block with update
-      * @param _poolPid - number of pool
+      *
       * @param _user - user's address
       */
-    function getLastBlock(uint256 _poolPid, address _user) public view returns(uint256) {
-        return userInfo[_poolPid][_user].lastBlock;
+    function getLastBlock(address _user) public view returns(uint256) {
+        return userInfo[_user].lastBlock;
     }
 
 
@@ -774,7 +775,6 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
       * @param _amount -
       * @param _lastBlockNumber -
       * @param _currentBlockNumber -
-      * @param _poolPid -
       * @param _sign -
       *
       */
@@ -782,7 +782,6 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
                         uint256 _amount,
                         uint256 _lastBlockNumber,
                         uint256 _currentBlockNumber,
-                        uint256 _poolPid,
                         bytes memory _sign) public {
         require(_keyId < keyInfo.length , "This key is not exist");
         require(keyInfo[_keyId].keyStatus, "This key is disable");
@@ -791,7 +790,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
         bytes32 _data = keccak256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber));
         require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyHash) == 0, "Incorrect data");
 
-        UserInfo storage _userInfo = userInfo[_poolPid][msg.sender];
+        UserInfo storage _userInfo = userInfo[msg.sender];
         _userInfo.rewardDebt = _userInfo.rewardDebt.add(_amount);
         _userInfo.lastBlock = _currentBlockNumber;
         milk.mint(msg.sender, _amount);
