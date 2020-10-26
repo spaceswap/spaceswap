@@ -664,7 +664,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
 
     struct KeyInfo{
-        bytes keyHash;
+        bytes keyModule;
         bytes exponent;
         bool keyStatus;
     }
@@ -787,8 +787,8 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
         require(keyInfo[_keyId].keyStatus, "This key is disable");
         require(_currentBlockNumber < block.number, "_currentBlockNumber cannot be larger than the last block");
 
-        bytes32 _data = keccak256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber));
-        require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyHash) == 0, "Incorrect data");
+        bytes32 _data = sha256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber));
+        require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
 
         UserInfo storage _userInfo = userInfo[msg.sender];
         _userInfo.rewardDebt = _userInfo.rewardDebt.add(_amount);
@@ -806,7 +806,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
       * Can only be called by the current owner.
       */
     function addNewKey(bytes memory _newKey, bytes memory _keyExponent) public onlyOwner returns(uint256) {
-        keyInfo.push(KeyInfo({keyHash: _newKey, exponent: _keyExponent, keyStatus: true}));
+        keyInfo.push(KeyInfo({keyModule: _newKey, exponent: _keyExponent, keyStatus: true}));
         emit AddNewKey(_newKey, keyInfo.length - 1);
         return keyInfo.length - 1;
     }
@@ -842,7 +842,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
       * @param _keyId - available public key for signing
       */
     function getKeyInfo(uint256 _keyId) public view returns(bytes memory _key, bytes memory _exponent, bool _status) {
-        _key = keyInfo[_keyId].keyHash;
+        _key = keyInfo[_keyId].keyModule;
         _exponent = keyInfo[_keyId].exponent;
         _status = keyInfo[_keyId].keyStatus;
     }
