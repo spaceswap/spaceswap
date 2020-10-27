@@ -681,14 +681,20 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
     uint256 private totalPoints;
 
+    uint256[5] internal epochs;
+
+    uint256[5] internal multipliers;
+
     event Harvest(address sender, uint256 amount, uint256 blockNumber);
     event AddNewPool(address token, uint256 pid);
     event PoolUpdate(uint256 poolPid, uint256 previusPoints, uint256 newPoints);
     event AddNewKey(bytes keyHash, uint256 id);
 
 
-    constructor(IMilk2Token _milk) public {
+    constructor(IMilk2Token _milk, uint256[5 ] memory _epochs, uint256[5] memory _multipliers) public {
         milk = _milk;
+        epochs = _epochs;
+        multipliers = _multipliers;
     }
 
     /**
@@ -727,11 +733,11 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     /**
          * @dev - return info about pool - LP address and allocation points
          */
-    function getPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _weight, uint256 _block) {
+    function getPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _block, uint256 _weight) {
         PoolInfo memory _poolInfo = poolInfo[_poolPid];
         _lpToken = address(_poolInfo.lpToken);
-        _weight = _poolInfo.allocPointAmount;
         _block = _poolInfo.blockCreation;
+        _weight = _poolInfo.allocPointAmount;
     }
 
 
@@ -789,8 +795,8 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
         require(keyInfo[_keyId].keyStatus, "This key is disable");
         require(_currentBlockNumber < block.number, "_currentBlockNumber cannot be larger than the last block");
 
-        if (_currentBlockNumber == 0) {
-            _currentBlockNumber = block.number;
+        if (_lastBlockNumber == 0) {
+            _lastBlockNumber = block.number; // todo точно???
             users.push(msg.sender);
         }
 
@@ -868,13 +874,50 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     }
 
 
-    function getUserAddress(uint256 _userId) public view returns(address) {
+    function getUser(uint256 _userId) public view returns(address) {
         return users[_userId];
     }
 
-    
+
     function getTotalRewards(address _user) public view returns(uint256) {
-        return userInfo[msg.sender].rewardDebt;
+        return userInfo[_user].rewardDebt;
+    }
+
+
+    function getMultiplier(uint256 _from, uint256 _to) public view returns(uint256) {
+        return 0;
+    }
+
+
+    function getCurrentMultiplier() public view returns(uint256) {
+        if (block.number < epochs[0]) {
+            return 0;
+        }
+        if (block.number < epochs[1]) {
+            return multipliers[0];
+        }
+        if (block.number < epochs[2]) {
+            return multipliers[1];
+        }
+        if (block.number < epochs[3]) {
+            return multipliers[2];
+        }
+        if (block.number < epochs[4]) {
+            return multipliers[3];
+        }
+        if (block.number > epochs[4]) {
+            return multipliers[4];
+        }
+    }
+
+
+    function getValueMultiplier(uint256 _id) public view returns(uint256) {
+        return multipliers[_id];
+    }
+
+
+    function getValueEpoch(uint256 _id) public view returns(uint256) {
+        return epochs[_id];
     }
 
 }
