@@ -884,8 +884,12 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     }
 
 
-    function getMultiplier(uint256 _from, uint256 _to) public view returns(uint256) {
-        return 0;
+    function getMultiplier(uint256 f, uint256 t) public view returns(uint256) {
+        return getInterval(0, min(t, epochs[1]) - max(f, epochs[0])) * multipliers[0] +
+        getInterval(0, min(t, epochs[2]) - max(f, epochs[1])) * multipliers[1] +
+        getInterval(0, min(t, epochs[3]) - max(f, epochs[2])) * multipliers[2] +
+        getInterval(0, min(t, epochs[4]) - max(f, epochs[3])) * multipliers[3] +
+        getInterval(0, max(t, epochs[4]) - max(f, epochs[4])) * multipliers[4];
     }
 
 
@@ -919,5 +923,22 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     function getValueEpoch(uint256 _id) public view returns(uint256) {
         return epochs[_id];
     }
+
+
+    function max(uint256 a, uint256 b) private pure returns (uint256) {
+        return a > b ? a : b;
+    }
+
+
+    function min(uint256 a, uint256 b) private pure returns (uint256) {
+        return a < b ? a : b;
+    }
+
+
+function getInterval(uint256 a, uint256 b) {
+    return a > b ? a - b : 0;
+}
+
+
 
 }
