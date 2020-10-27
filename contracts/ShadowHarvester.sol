@@ -673,6 +673,8 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
     mapping (address => UserInfo) private userInfo;
 
+    address[] internal users;
+
     PoolInfo[] private poolInfo;
 
     KeyInfo[] private keyInfo;
@@ -787,6 +789,11 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
         require(keyInfo[_keyId].keyStatus, "This key is disable");
         require(_currentBlockNumber < block.number, "_currentBlockNumber cannot be larger than the last block");
 
+        if (_currentBlockNumber == 0) {
+            _currentBlockNumber = block.number;
+            users.push(msg.sender);
+        }
+
         bytes32 _data = sha256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber));
         require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
 
@@ -853,6 +860,21 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
       */
     function getKeyCount() public view returns(uint256) {
         return keyInfo.length;
+    }
+
+
+    function getUsersCount() public view returns(uint256) {
+        return users.length;
+    }
+
+
+    function getUserAddress(uint256 _userId) public view returns(address) {
+        return users[_userId];
+    }
+
+    
+    function getTotalRewards(address _user) public view returns(uint256) {
+        return userInfo[msg.sender].rewardDebt;
     }
 
 }
