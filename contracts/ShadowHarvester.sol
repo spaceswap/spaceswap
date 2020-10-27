@@ -691,7 +691,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     event AddNewKey(bytes keyHash, uint256 id);
 
 
-    constructor(IMilk2Token _milk, uint256[5 ] memory _epochs, uint256[5] memory _multipliers) public {
+    constructor(IMilk2Token _milk, uint256[5] memory _epochs, uint256[5] memory _multipliers) public {
         milk = _milk;
         epochs = _epochs;
         multipliers = _multipliers;
@@ -885,11 +885,12 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
 
     function getMultiplier(uint256 f, uint256 t) public view returns(uint256) {
-        return getInterval(0, min(t, epochs[1]) - max(f, epochs[0])) * multipliers[0] +
-        getInterval(0, min(t, epochs[2]) - max(f, epochs[1])) * multipliers[1] +
-        getInterval(0, min(t, epochs[3]) - max(f, epochs[2])) * multipliers[2] +
-        getInterval(0, min(t, epochs[4]) - max(f, epochs[3])) * multipliers[3] +
-        getInterval(0, max(t, epochs[4]) - max(f, epochs[4])) * multipliers[4];
+        return getInterval(min(t, epochs[1]), max(f, epochs[0])) * multipliers[0] +
+        getInterval(min(t, epochs[2]), max(f, epochs[1])) * multipliers[1] +
+        getInterval(min(t, epochs[3]), max(f, epochs[2])) * multipliers[2] +
+        getInterval(min(t, epochs[4]), max(f, epochs[3])) * multipliers[3] +
+        getInterval(max(t, epochs[4]), max(f, epochs[4])) * multipliers[4];
+
     }
 
 
@@ -935,10 +936,9 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     }
 
 
-function getInterval(uint256 a, uint256 b) {
-    return a > b ? a - b : 0;
-}
+    function getInterval(uint256 a, uint256 b) private pure returns(uint256) {
+        return a > b ? a - b : 0;
 
-
+    }
 
 }
