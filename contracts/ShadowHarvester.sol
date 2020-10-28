@@ -795,13 +795,14 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
         require(keyInfo[_keyId].keyStatus, "This key is disable");
         require(_currentBlockNumber < block.number, "_currentBlockNumber cannot be larger than the last block");
 
+        bytes32 _data = sha256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber, msg.sender));
+        require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
+
         if (_lastBlockNumber == 0) {
-            _lastBlockNumber = block.number; // todo точно???
+            _lastBlockNumber = block.number;
+            _currentBlockNumber = block.number;
             users.push(msg.sender);
         }
-
-        bytes32 _data = sha256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber));
-        require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
 
         UserInfo storage _userInfo = userInfo[msg.sender];
         _userInfo.rewardDebt = _userInfo.rewardDebt.add(_amount);
