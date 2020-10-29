@@ -646,7 +646,56 @@ interface IMilk2Token {
 
 }
 
-contract ShadowHarvester is Ownable, SolRsaVerify {
+contract MultiplierMath {
+
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a > b ? a : b;
+    }
+
+
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
+    }
+
+
+    function getInterval(uint256 a, uint256 b) internal pure returns(uint256) {
+        return a > b ? a - b : 0;
+    }
+
+
+    function getMultiplier(uint256 f, uint256 t) public view returns(uint256) {
+        return getInterval(min(t, epochs[1]), max(f, epochs[0])) * multipliers[0] +
+        getInterval(min(t, epochs[2]), max(f, epochs[1])) * multipliers[1] +
+        getInterval(min(t, epochs[3]), max(f, epochs[2])) * multipliers[2] +
+        getInterval(min(t, epochs[4]), max(f, epochs[3])) * multipliers[3] +
+        getInterval(max(t, epochs[4]), max(f, epochs[4])) * multipliers[4];
+    }
+
+
+    function getCurrentMultiplier() public view returns(uint256) {
+        if (block.number < epochs[0]) {
+            return 0;
+        }
+        if (block.number < epochs[1]) {
+            return multipliers[0];
+        }
+        if (block.number < epochs[2]) {
+            return multipliers[1];
+        }
+        if (block.number < epochs[3]) {
+            return multipliers[2];
+        }
+        if (block.number < epochs[4]) {
+            return multipliers[3];
+        }
+        if (block.number > epochs[4]) {
+            return multipliers[4];
+        }
+    }
+
+}
+
+contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -675,15 +724,18 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
     address[] internal users;
 
+
     PoolInfo[] private poolInfo;
 
     KeyInfo[] private keyInfo;
+
 
     uint256 private totalPoints;
 
     uint256[5] internal epochs;
 
     uint256[5] internal multipliers;
+
 
     event Harvest(address sender, uint256 amount, uint256 blockNumber);
     event AddNewPool(address token, uint256 pid);
@@ -696,6 +748,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
         epochs = _epochs;
         multipliers = _multipliers;
     }
+
 
     /**
       * @dev Add a new lp to the pool.
@@ -713,7 +766,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
 
     /**
-     * @dev Add a new lp to the pool.
+     * @dev Update lp address to the pool.
      *
       * @param _poolPid - number of pool
       * @param _newPoints - new amount of allocation points
@@ -731,8 +784,9 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
 
     /**
-         * @dev - return info about pool - LP address and allocation points
-         */
+    * @param - _poolPid - pool id
+    * @dev - return info about pool - LP address,number of creation  and allocation points
+    */
     function getPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _block, uint256 _weight) {
         PoolInfo memory _poolInfo = poolInfo[_poolPid];
         _lpToken = address(_poolInfo.lpToken);
@@ -779,12 +833,11 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     /**
       * @dev Update the given pool's allocation point. Can only be called by the owner.
       *
-      * @param _keyId -
+      * @param _keyId - unique id key in contract storage
       * @param _amount -
-      * @param _lastBlockNumber -
-      * @param _currentBlockNumber -
-      * @param _sign -
-      *
+      * @param _lastBlockNumber - last update number of block
+      * @param _currentBlockNumber - last update block in Ethereum mainnet
+      * @param _sign - bytes32 signature
       */
     function withdraw(  uint256 _keyId,
                         uint256 _amount,
@@ -796,6 +849,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
         require(_currentBlockNumber < block.number, "_currentBlockNumber cannot be larger than the last block");
 
         bytes32 _data = sha256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber, msg.sender));
+
         require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
 
         if (_lastBlockNumber == 0) {
@@ -807,7 +861,10 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
         UserInfo storage _userInfo = userInfo[msg.sender];
         _userInfo.rewardDebt = _userInfo.rewardDebt.add(_amount);
         _userInfo.lastBlock = _currentBlockNumber;
-        milk.mint(msg.sender, _amount);
+
+        if (_amount > 0) {
+            milk.mint(msg.sender, _amount);
+        }
 
         emit Harvest(msg.sender, _amount, _currentBlockNumber);
     }
@@ -816,10 +873,11 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     /**
       * @dev
       *
-      * @param _newKey - new keyHash
+      * @param _newModule - new module of key
+      * @param _keyExponent - new exponent of key
       * Can only be called by the current owner.
       */
-    function addNewKey(bytes memory _newKey, bytes memory _keyExponent) public onlyOwner returns(uint256) {
+    function addNewKey(bytes memory _newModule, bytes memory _keyExponent) public onlyOwner returns(uint256) {
         keyInfo.push(KeyInfo({keyModule: _newKey, exponent: _keyExponent, keyStatus: true}));
         emit AddNewKey(_newKey, keyInfo.length - 1);
         return keyInfo.length - 1;
@@ -852,7 +910,6 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
 
     /**
       * @dev Return info about available key
-      *
       * @param _keyId - available public key for signing
       */
     function getKeyInfo(uint256 _keyId) public view returns(bytes memory _key, bytes memory _exponent, bool _status) {
@@ -870,76 +927,46 @@ contract ShadowHarvester is Ownable, SolRsaVerify {
     }
 
 
+    /**
+     * @dev - return Number of users
+     */
     function getUsersCount() public view returns(uint256) {
         return users.length;
     }
 
 
+    /**
+     * @dev - return address of user
+     * @param - _userId - unique number of user in array
+     */
     function getUser(uint256 _userId) public view returns(address) {
         return users[_userId];
     }
 
-
+    
+    /**
+     * @dev - return total rewards
+     */
     function getTotalRewards(address _user) public view returns(uint256) {
         return userInfo[_user].rewardDebt;
     }
 
 
-    function getMultiplier(uint256 f, uint256 t) public view returns(uint256) {
-        return getInterval(min(t, epochs[1]), max(f, epochs[0])) * multipliers[0] +
-        getInterval(min(t, epochs[2]), max(f, epochs[1])) * multipliers[1] +
-        getInterval(min(t, epochs[3]), max(f, epochs[2])) * multipliers[2] +
-        getInterval(min(t, epochs[4]), max(f, epochs[3])) * multipliers[3] +
-        getInterval(max(t, epochs[4]), max(f, epochs[4])) * multipliers[4];
-
-    }
-
-
-    function getCurrentMultiplier() public view returns(uint256) {
-        if (block.number < epochs[0]) {
-            return 0;
-        }
-        if (block.number < epochs[1]) {
-            return multipliers[0];
-        }
-        if (block.number < epochs[2]) {
-            return multipliers[1];
-        }
-        if (block.number < epochs[3]) {
-            return multipliers[2];
-        }
-        if (block.number < epochs[4]) {
-            return multipliers[3];
-        }
-        if (block.number > epochs[4]) {
-            return multipliers[4];
-        }
-    }
-
-
+    /**
+    * @param - _id - multiplier's id (0-4)
+    * @dev - return value of multiplier
+    */
     function getValueMultiplier(uint256 _id) public view returns(uint256) {
         return multipliers[_id];
     }
 
 
+    /**
+    * @param - _id - epoch's id(0-4)
+    * @dev - return value of epoch
+    */
     function getValueEpoch(uint256 _id) public view returns(uint256) {
         return epochs[_id];
-    }
-
-
-    function max(uint256 a, uint256 b) private pure returns (uint256) {
-        return a > b ? a : b;
-    }
-
-
-    function min(uint256 a, uint256 b) private pure returns (uint256) {
-        return a < b ? a : b;
-    }
-
-
-    function getInterval(uint256 a, uint256 b) private pure returns(uint256) {
-        return a > b ? a - b : 0;
-
     }
 
 }
