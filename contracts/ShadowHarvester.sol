@@ -1,3 +1,11 @@
+/**
+ *Submitted for verification at Etherscan.io on 2020-10-30
+*/
+
+/**
+ *Submitted for verification at Etherscan.io on 2020-10-30
+*/
+
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.6.12;
 
@@ -667,7 +675,7 @@ contract MultiplierMath {
 
 }
 
-contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
+contract ShadowStaking is Ownable, SolRsaVerify, MultiplierMath {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -755,10 +763,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
     }
 
 
-    /**
-    * @param - _poolPid - pool id
-    * @dev - return info about pool - LP address,number of creation  and allocation points
-    */
+
     function getPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _block, uint256 _weight) {
         PoolInfo memory _poolInfo = poolInfo[_poolPid];
         _lpToken = address(_poolInfo.lpToken);
@@ -819,10 +824,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
         require(_keyId < keyInfo.length, "This key is not exist");
         require(keyInfo[_keyId].keyStatus, "This key is disable");
         require(_currentBlockNumber < block.number, "currentBlockNumber cannot be larger than the last block");
-        require(pkcs1Sha256Verify(  getData(_amount, _lastBlockNumber, _currentBlockNumber, msg.sender),
-                                    _sign,
-                                    keyInfo[_keyId].exponent,
-                                    keyInfo[_keyId].keyModule) == 0, "Incorrect data");
+        require(pkcs1Sha256Verify(getData(_amount, _lastBlockNumber, _currentBlockNumber, msg.sender), _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
 
         UserInfo storage _userInfo = userInfo[msg.sender];
         require(_userInfo.lastBlock == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
@@ -841,18 +843,9 @@ contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
     }
 
 
-    /**
-    * @dev
-    *
-    * @param _amount -
-    * @param _lastBlockNumber - last update number of block
-    * @param _currentBlockNumber - last update block in Ethereum mainnet
-    * @param _sender - address msg.sender
-    * Can only be called by the current owner.
-    */
     function getData(uint256 _amount,
                     uint256 _lastBlockNumber,
-                    int256 _currentBlockNumber,
+                    uint256 _currentBlockNumber,
                     address _sender) public pure returns(bytes32) {
         return sha256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber, _sender));
     }
