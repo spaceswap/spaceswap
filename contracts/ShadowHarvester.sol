@@ -663,35 +663,7 @@ contract MultiplierMath {
     }
 
 
-    function getMultiplier(uint256 f, uint256 t) public view returns(uint256) {
-        return getInterval(min(t, epochs[1]), max(f, epochs[0])) * multipliers[0] +
-        getInterval(min(t, epochs[2]), max(f, epochs[1])) * multipliers[1] +
-        getInterval(min(t, epochs[3]), max(f, epochs[2])) * multipliers[2] +
-        getInterval(min(t, epochs[4]), max(f, epochs[3])) * multipliers[3] +
-        getInterval(max(t, epochs[4]), max(f, epochs[4])) * multipliers[4];
-    }
 
-
-    function getCurrentMultiplier() public view returns(uint256) {
-        if (block.number < epochs[0]) {
-            return 0;
-        }
-        if (block.number < epochs[1]) {
-            return multipliers[0];
-        }
-        if (block.number < epochs[2]) {
-            return multipliers[1];
-        }
-        if (block.number < epochs[3]) {
-            return multipliers[2];
-        }
-        if (block.number < epochs[4]) {
-            return multipliers[3];
-        }
-        if (block.number > epochs[4]) {
-            return multipliers[4];
-        }
-    }
 
 }
 
@@ -768,8 +740,8 @@ contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
     /**
      * @dev Update lp address to the pool.
      *
-      * @param _poolPid - number of pool
-      * @param _newPoints - new amount of allocation points
+     * @param _poolPid - number of pool
+     * @param _newPoints - new amount of allocation points
      * DO NOT add the same LP token more than once. Rewards will be messed up if you do.
      * Can only be called by the current owner.
      */
@@ -846,26 +818,24 @@ contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
                         bytes memory _sign) public {
         require(_keyId < keyInfo.length , "This key is not exist");
         require(keyInfo[_keyId].keyStatus, "This key is disable");
-        require(_currentBlockNumber < block.number, "_currentBlockNumber cannot be larger than the last block");
+        require(_currentBlockNumber < block.number, "currentBlockNumber cannot be larger than the last block");
 
         bytes32 _data = sha256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber, msg.sender));
-
         require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
+
+        UserInfo storage _userInfo = userInfo[msg.sender];
+        require(_userInfo.lastBlock == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
 
         if (_lastBlockNumber == 0) {
             _lastBlockNumber = block.number;
             _currentBlockNumber = block.number;
             users.push(msg.sender);
         }
-
-        UserInfo storage _userInfo = userInfo[msg.sender];
         _userInfo.rewardDebt = _userInfo.rewardDebt.add(_amount);
         _userInfo.lastBlock = _currentBlockNumber;
-
         if (_amount > 0) {
             milk.mint(msg.sender, _amount);
         }
-
         emit Harvest(msg.sender, _amount, _currentBlockNumber);
     }
 
@@ -878,8 +848,8 @@ contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
       * Can only be called by the current owner.
       */
     function addNewKey(bytes memory _newModule, bytes memory _keyExponent) public onlyOwner returns(uint256) {
-        keyInfo.push(KeyInfo({keyModule: _newKey, exponent: _keyExponent, keyStatus: true}));
-        emit AddNewKey(_newKey, keyInfo.length - 1);
+        keyInfo.push(KeyInfo({keyModule: _newModule, exponent: _keyExponent, keyStatus: true}));
+        emit AddNewKey(_newModule, keyInfo.length - 1);
         return keyInfo.length - 1;
     }
 
@@ -943,7 +913,7 @@ contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
         return users[_userId];
     }
 
-    
+
     /**
      * @dev - return total rewards
      */
@@ -967,6 +937,37 @@ contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
     */
     function getValueEpoch(uint256 _id) public view returns(uint256) {
         return epochs[_id];
+    }
+
+
+    function getMultiplier(uint256 f, uint256 t) public view returns(uint256) {
+        return getInterval(min(t, epochs[1]), max(f, epochs[0])) * multipliers[0] +
+        getInterval(min(t, epochs[2]), max(f, epochs[1])) * multipliers[1] +
+        getInterval(min(t, epochs[3]), max(f, epochs[2])) * multipliers[2] +
+        getInterval(min(t, epochs[4]), max(f, epochs[3])) * multipliers[3] +
+        getInterval(max(t, epochs[4]), max(f, epochs[4])) * multipliers[4];
+    }
+
+
+    function getCurrentMultiplier() public view returns(uint256) {
+        if (block.number < epochs[0]) {
+            return 0;
+        }
+        if (block.number < epochs[1]) {
+            return multipliers[0];
+        }
+        if (block.number < epochs[2]) {
+            return multipliers[1];
+        }
+        if (block.number < epochs[3]) {
+            return multipliers[2];
+        }
+        if (block.number < epochs[4]) {
+            return multipliers[3];
+        }
+        if (block.number > epochs[4]) {
+            return multipliers[4];
+        }
     }
 
 }
