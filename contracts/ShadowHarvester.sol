@@ -816,12 +816,13 @@ contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
                         uint256 _lastBlockNumber,
                         uint256 _currentBlockNumber,
                         bytes memory _sign) public {
-        require(_keyId < keyInfo.length , "This key is not exist");
+        require(_keyId < keyInfo.length, "This key is not exist");
         require(keyInfo[_keyId].keyStatus, "This key is disable");
         require(_currentBlockNumber < block.number, "currentBlockNumber cannot be larger than the last block");
-
-        bytes32 _data = sha256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber, msg.sender));
-        require(pkcs1Sha256Verify(_data, _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
+        require(pkcs1Sha256Verify(  getData(_amount, _lastBlockNumber, _currentBlockNumber, msg.sender),
+                                    _sign,
+                                    keyInfo[_keyId].exponent,
+                                    keyInfo[_keyId].keyModule) == 0, "Incorrect data");
 
         UserInfo storage _userInfo = userInfo[msg.sender];
         require(_userInfo.lastBlock == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
@@ -837,6 +838,23 @@ contract ShadowHarvester is Ownable, SolRsaVerify, MultiplierMath {
             milk.mint(msg.sender, _amount);
         }
         emit Harvest(msg.sender, _amount, _currentBlockNumber);
+    }
+
+
+    /**
+    * @dev
+    *
+    * @param _amount -
+    * @param _lastBlockNumber - last update number of block
+    * @param _currentBlockNumber - last update block in Ethereum mainnet
+    * @param _sender - address msg.sender
+    * Can only be called by the current owner.
+    */
+    function getData(uint256 _amount,
+                    uint256 _lastBlockNumber,
+                    int256 _currentBlockNumber,
+                    address _sender) public pure returns(bytes32) {
+        return sha256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber, _sender));
     }
 
 
