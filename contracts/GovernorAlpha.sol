@@ -1089,7 +1089,7 @@ contract GovernorAlpha {
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
     // XXX: function quorumVotes() public pure returns (uint) { return 400000e18; } // 400,000 = 4% of Comp
-    function quorumVotes() public view returns (uint) { return milk.totalSupply() / 25; } // 4% of Supply // todo
+    function quorumVotes() public view returns (uint) { return milk.totalSupply() / 25; } // 4% of Supply
 
     /// @notice The number of votes required in order for a voter to become a proposer
     // function proposalThreshold() public pure returns (uint) { return 100000e18; } // 100,000 = 1% of Comp

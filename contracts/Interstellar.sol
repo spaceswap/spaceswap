@@ -154,7 +154,7 @@ contract Interstellar is Ownable {
             return _to.sub(_from);
         }
         else {
-            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER_1).add( // todo ????
+            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER_1).add(
                 _to.sub(bonusEndBlock)
             );
         }
