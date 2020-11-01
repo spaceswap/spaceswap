@@ -59,7 +59,7 @@ describe('Blender - special cases', () => {
   
   it('name, symbol, decimals - MilkyWayToken', async () => {
     const name = await MilkyWayToken.name()
-    expect(name).to.eq('MilkyWayToken')
+    expect(name).to.eq('MilkyWay Token by SpaceSwap v2')
     expect(await MilkyWayToken.symbol()).to.eq('MILK2')
     expect(await MilkyWayToken.decimals()).to.eq(18)
   })
@@ -70,13 +70,13 @@ describe('Blender - special cases', () => {
     expect(await Blender.START_FROM_BLOCK()).to.eq(40)
   })
 
-  it('getMilkForShake works only after START_FROM_BLOCK', async () => {
+  it('Blender setPauseState works only from owner', async () => {
     await ShakeToken.connect(wallet1).mint(wallet2.address, expandTo18Decimals(3))
     expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(expandTo18Decimals(3))
     expect(await ShakeToken.totalSupply()).to.eq(expandTo18Decimals(3))
     expect(await ShakeToken.totalMinted()).to.eq(expandTo18Decimals(3))
 
-    await expect(Blender.connect(wallet2).getMilkForShake(1)).to.be.reverted
+    await expect(Blender.connect(wallet2).setPauseState(true)).to.be.reverted
 
     expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(expandTo18Decimals(3))
     expect(await ShakeToken.totalSupply()).to.eq(expandTo18Decimals(3))
@@ -100,37 +100,16 @@ describe('Blender - special cases', () => {
     await MilkyWayToken.connect(wallet1).mint(wallet2.address,currPrice.mul(2))
 
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice.mul(2));
-    //try to mint shake more than MAX_TOTAL_SUPPLY
-    await expect(Blender.connect(wallet2).getOneShake()).to.be.reverted
-    //burn 1 shake through exchanging milk - call getMilkForShake 
-    await Blender.connect(wallet2).getMilkForShake(1)
- 
-    expect(await ShakeToken.balanceOf(wallet2.address)).to.eq((await ShakeToken.MAX_TOTAL_SUPPLY()).sub(expandTo18Decimals(1)))
-    expect(await MilkyWayToken.balanceOf(wallet2.address)).
-            to.eq(currPrice.mul(2).add(currPrice).sub(await Blender.SHAKE_PRICE_STEP()))
-    expect(await ShakeToken.totalSupply()).to.eq((await ShakeToken.MAX_TOTAL_SUPPLY()).sub(expandTo18Decimals(1)))
-    expect(await MilkyWayToken.totalSupply()).
-            to.eq(currPrice.mul(2).add(currPrice).sub(await Blender.SHAKE_PRICE_STEP()))
-    expect(await Blender.currShakePrice()).to.eq(currPrice)
-    expect(await ShakeToken.totalMinted()).to.eq(await ShakeToken.MAX_TOTAL_SUPPLY())
-    expect(await ShakeToken.totalBurned()).to.eq(expandTo18Decimals(1))
-
-    // mint new shake - call getOneShake(1) - success
-    await Blender.connect(wallet2).getOneShake()
     // mint new shake - call getOneShake() - fail - more than Max_Total_Supply
     await expect(Blender.connect(wallet2).getOneShake()).to.be.reverted
-    // mint new shake - call getOneShake(1) - success
+   
 
     expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(await ShakeToken.MAX_TOTAL_SUPPLY())
-    expect(await MilkyWayToken.balanceOf(wallet2.address)).
-             to.eq(currPrice.mul(2).add(currPrice).sub(await Blender.SHAKE_PRICE_STEP())
-                    .sub(currPrice))
+
     expect(await ShakeToken.totalSupply()).to.eq(await ShakeToken.MAX_TOTAL_SUPPLY())
-    expect(await MilkyWayToken.totalSupply()).
-               to.eq(currPrice.mul(2).add(currPrice).sub(await Blender.SHAKE_PRICE_STEP())
-                    .sub(currPrice))
-    expect(await ShakeToken.totalMinted()).to.eq((await ShakeToken.MAX_TOTAL_SUPPLY()).add(expandTo18Decimals(1)))
-    expect(await ShakeToken.totalBurned()).to.eq(expandTo18Decimals(1))
+    
+    //expect(await ShakeToken.totalMinted()).to.eq((await ShakeToken.MAX_TOTAL_SUPPLY()).add(expandTo18Decimals(1)))
+    //expect(await ShakeToken.totalBurned()).to.eq(expandTo18Decimals(1))
   })
 })
 

@@ -58,7 +58,7 @@ describe('Blender - getOneShake', () => {
   
   it('name, symbol, decimals - MilkyWayToken', async () => {
     const name = await MilkyWayToken.name()
-    expect(name).to.eq('MilkyWayToken')
+    expect(name).to.eq('MilkyWay Token by SpaceSwap v2')
     expect(await MilkyWayToken.symbol()).to.eq('MILK2')
     expect(await MilkyWayToken.decimals()).to.eq(18)
   })
@@ -75,6 +75,26 @@ describe('Blender - getOneShake', () => {
 
     expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice);
 
+    await expect(Blender.connect(wallet2).getOneShake()).to.be.reverted;
+
+    expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(0)
+    expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice)
+    expect(await ShakeToken.totalSupply()).to.eq(0)
+    expect(await MilkyWayToken.totalSupply()).to.eq(currPrice)
+    expect(await Blender.currShakePrice()).to.eq(currPrice)
+    expect(await ShakeToken.totalMinted()).to.eq(0)
+    expect(await ShakeToken.totalBurned()).to.eq(0)
+  })
+
+
+  it('getOneShake does not work - paused by owner ', async () => {
+    let currPrice = await Blender.currShakePrice()
+    await MilkyWayToken.connect(wallet1).mint(wallet2.address,currPrice)
+    
+    expect(await MilkyWayToken.balanceOf(wallet2.address)).to.eq(currPrice);
+    
+    await Blender.connect(walletOwner).setPauseState(true);
+    
     await expect(Blender.connect(wallet2).getOneShake()).to.be.reverted;
 
     expect(await ShakeToken.balanceOf(wallet2.address)).to.eq(0)
