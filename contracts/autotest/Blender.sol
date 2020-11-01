@@ -252,6 +252,8 @@ interface IERC20 {
     uint32  public immutable START_FROM_BLOCK;
     
     uint256 public currShakePrice;
+    address public owner;
+    bool    public paused;
     
     /**
      * @dev Sets the values for {MILK_ADDRESS}, {SHAKE_ADDRESS}
@@ -269,6 +271,8 @@ interface IERC20 {
         SHAKE_ADDRESS    = _shakeAddress;
         currShakePrice   = 1000*10**18; //MILK2
         START_FROM_BLOCK = _startFromBlock;
+        owner            = msg.sender;
+        paused           = false;
     }
     
     /**
@@ -281,6 +285,7 @@ interface IERC20 {
      */
     function getOneShake() external {
         require(block.number >= START_FROM_BLOCK, "Please wait for start block");
+        require(paused == false, "Paused by owner");
 
         IERC20 milk2Token = IERC20(MILK_ADDRESS);
 
@@ -294,26 +299,12 @@ interface IERC20 {
     }
     
     /**
-     * @dev Just exchange your SHAKE for MILK2.
-     * Caller must have SHAKE on his/her balance.
-     * `_amount` is amount of user's SHAKE that he/she want burn for get MILK2 
-     * Note that one need use `_amount` without decimals.
-     * 
-     * Note that MILK2 amount will calculate from the reduced by one step `currShakePrice`
-     *
-     * Function can be called after `START_FROM_BLOCK`
-     */
-    function getMilkForShake(uint16 _amount) external {
-        require(block.number >= START_FROM_BLOCK, "Please wait for start block");
-
-        IERC20 shakeToken = IERC20(SHAKE_ADDRESS);
-        
-        require(shakeToken.balanceOf(msg.sender) >= uint256(_amount)*10**18, "There is no enough SHAKE");
-        require(shakeToken.burn(msg.sender, uint256(_amount)*10**18), "Can't burn your SHAKE");
-        
-        IERC20 milk2Token = IERC20(MILK_ADDRESS);
-        milk2Token.mint(msg.sender, uint256(_amount).mul(currShakePrice.sub(SHAKE_PRICE_STEP)));
-        
+    *@dev set pause state
+    *for owner use ONLY!!
+    */
+    function setPauseState(bool _isPaused) external {
+        require(msg.sender == owner, "For owner use ONLY!!!");
+        paused = _isPaused;
     }
     
 }
