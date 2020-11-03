@@ -670,9 +670,6 @@ contract MultiplierMath {
         return a > b ? a - b : 0;
     }
 
-
-
-
 }
 
 contract ShadowStaking is Ownable, SolRsaVerify, MultiplierMath {
@@ -763,7 +760,6 @@ contract ShadowStaking is Ownable, SolRsaVerify, MultiplierMath {
     }
 
 
-
     function getPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _block, uint256 _weight) {
         PoolInfo memory _poolInfo = poolInfo[_poolPid];
         _lpToken = address(_poolInfo.lpToken);
@@ -825,21 +821,23 @@ contract ShadowStaking is Ownable, SolRsaVerify, MultiplierMath {
         require(keyInfo[_keyId].keyStatus, "This key is disable");
         require(_currentBlockNumber < block.number, "currentBlockNumber cannot be larger than the last block");
         require(pkcs1Sha256Verify(getData(_amount, _lastBlockNumber, _currentBlockNumber, msg.sender), _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
+        require(userInfo[msg.sender].lastBlock == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
 
-        UserInfo storage _userInfo = userInfo[msg.sender];
-        require(_userInfo.lastBlock == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
-
-        if (_lastBlockNumber == 0) {
-            _lastBlockNumber = block.number;
-            _currentBlockNumber = block.number;
-            users.push(msg.sender);
-        }
-        _userInfo.rewardDebt = _userInfo.rewardDebt.add(_amount);
-        _userInfo.lastBlock = _currentBlockNumber;
+        userInfo[msg.sender].rewardDebt = userInfo[msg.sender].rewardDebt.add(_amount);
+        userInfo[msg.sender].lastBlock = _currentBlockNumber;
         if (_amount > 0) {
             milk.mint(msg.sender, _amount);
         }
         emit Harvest(msg.sender, _amount, _currentBlockNumber);
+    }
+
+
+    function registration() public {
+        require(userInfo[msg.sender].lastBlock == 0, "User already exist");
+        UserInfo storage _userInfo = userInfo[msg.sender];
+        _userInfo.rewardDebt = 0;
+        _userInfo.lastBlock = block.number;
+        users.push(msg.sender);
     }
 
 
