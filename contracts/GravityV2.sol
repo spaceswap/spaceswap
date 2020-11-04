@@ -1386,7 +1386,7 @@ contract GravityV2 is Ownable {
     uint256 public startBlock;
 
     // Bonus multiplier for early milk2 makers.
-    uint256 internal milkPerBlock = 100000000000000000;
+    uint256 internal milkPerBlock = 100; // 1
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -1455,13 +1455,13 @@ contract GravityV2 is Ownable {
 
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-            return _to.sub(_from).mul(milkPerBlock);
+        return _to.sub(_from).mul(milkPerBlock);
     }
 
 
     // View current block reward in MILK2s
     function getCurrentBlockReward() public view returns (uint256) {
-            return milkPerBlock;
+        return milkPerBlock;
     }
 
 
@@ -1474,7 +1474,7 @@ contract GravityV2 is Ownable {
 
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-            uint256 milkReward = (multiplier.mul(1e18)).mul(pool.allocPoint).div(totalAllocPoint);
+            uint256 milkReward = (multiplier.mul(1e16)).mul(pool.allocPoint).div(totalAllocPoint);
             accMilkPerShare = accMilkPerShare.add(milkReward.mul(1e12).div(lpSupply));
         }
 
@@ -1504,7 +1504,7 @@ contract GravityV2 is Ownable {
         }
 
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-        uint256 milkReward = multiplier.mul(1e18).mul(pool.allocPoint).div(totalAllocPoint);
+        uint256 milkReward = multiplier.mul(1e16).mul(pool.allocPoint).div(totalAllocPoint);
         milk.mint(devAddr, milkReward.mul(3).div(100)); // 3% developers
         milk.mint(distributor, milkReward.div(100)); // 1% shakeHolders
         milk.mint(address(this), milkReward);
