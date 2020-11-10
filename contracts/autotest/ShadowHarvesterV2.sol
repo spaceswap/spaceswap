@@ -432,159 +432,6 @@ library Address {
     }
 }
 
-/*
-    Copyright 2016, Adrià Massanet
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-    Checked results with FIPS test vectors
-    https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/dss/186-2rsatestvectors.zip
-    file SigVer15_186-3.rsp
-
- */
-// contract SolRsaVerify {
-
-//     function memcpy(uint _dest, uint _src, uint _len) pure internal {
-//         // Copy word-length chunks while possible
-//         for ( ;_len >= 32; _len -= 32) {
-//             assembly {
-//                 mstore(_dest, mload(_src))
-//             }
-//             _dest += 32;
-//             _src += 32;
-//         }
-
-//         // Copy remaining bytes
-//         uint mask = 256 ** (32 - _len) - 1;
-//         assembly {
-//             let srcpart := and(mload(_src), not(mask))
-//             let destpart := and(mload(_dest), mask)
-//             mstore(_dest, or(destpart, srcpart))
-//         }
-//     }
-
-
-//     function join(
-//         bytes memory _s, bytes memory _e, bytes memory _m
-//     ) pure internal returns (bytes memory) {
-//         uint inputLen = 0x60+_s.length+_e.length+_m.length;
-
-//         uint slen = _s.length;
-//         uint elen = _e.length;
-//         uint mlen = _m.length;
-//         uint sptr;
-//         uint eptr;
-//         uint mptr;
-//         uint inputPtr;
-
-//         bytes memory input = new bytes(inputLen);
-//         assembly {
-//             sptr := add(_s,0x20)
-//             eptr := add(_e,0x20)
-//             mptr := add(_m,0x20)
-//             mstore(add(input,0x20),slen)
-//             mstore(add(input,0x40),elen)
-//             mstore(add(input,0x60),mlen)
-//             inputPtr := add(input,0x20)
-//         }
-//         memcpy(inputPtr+0x60,sptr,_s.length);
-//         memcpy(inputPtr+0x60+_s.length,eptr,_e.length);
-//         memcpy(inputPtr+0x60+_s.length+_e.length,mptr,_m.length);
-
-//         return input;
-//     }
-
-//     /** @dev Verifies a PKCSv1.5 SHA256 signature
-//       * @param _sha256 is the sha256 of the data
-//       * @param _s is the signature
-//       * @param _e is the exponent
-//       * @param _m is the modulus
-//       * @return 0 if success, >0 otherwise
-//     */
-//     function pkcs1Sha256Verify(
-//         bytes32 _sha256,
-//         bytes memory _s, bytes memory _e, bytes memory _m
-//     ) public view returns (uint) {
-
-//         uint8[19] memory sha256Prefix = [
-//         0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20
-//         ];
-
-//         require(_m.length >= sha256Prefix.length+_sha256.length+11);
-
-//         uint i;
-
-//         /// decipher
-//         bytes memory input = join(_s,_e,_m);
-//         uint inputlen = input.length;
-
-//         uint decipherlen = _m.length;
-//         bytes memory decipher = new bytes(decipherlen);
-//         assembly {
-//             pop(staticcall(sub(gas(), 2000), 5, add(input,0x20), inputlen, add(decipher,0x20), decipherlen))
-//         }
-
-//         /// 0x00 || 0x01 || PS || 0x00 || DigestInfo
-//         /// PS is padding filled with 0xff
-//         //  DigestInfo ::= SEQUENCE {
-//         //     digestAlgorithm AlgorithmIdentifier,
-//         //     digest OCTET STRING
-//         //  }
-
-//         uint paddingLen = decipherlen - 3 - sha256Prefix.length - 32;
-
-//         if (decipher[0] != 0 || uint8(decipher[1]) != 1) {
-//             return 1;
-//         }
-//         for (i = 2;i<2+paddingLen;i++) {
-//             if (decipher[i] != 0xff) {
-//                 return 2;
-//             }
-//         }
-//         if (decipher[2+paddingLen] != 0) {
-//             return 3;
-//         }
-//         for (i = 0;i<sha256Prefix.length;i++) {
-//             if (uint8(decipher[3+paddingLen+i])!=sha256Prefix[i]) {
-//                 return 4;
-//             }
-//         }
-//         for (i = 0;i<_sha256.length;i++) {
-//             if (decipher[3+paddingLen+sha256Prefix.length+i]!=_sha256[i]) {
-//                 return 5;
-//             }
-//         }
-
-//         return 0;
-//     }
-
-//     /** @dev Verifies a PKCSv1.5 SHA256 signature
-//       * @param _data to verify
-//       * @param _s is the signature
-//       * @param _e is the exponent
-//       * @param _m is the modulus
-//       * @return 0 if success, >0 otherwise
-//     */
-//     function pkcs1Sha256VerifyRaw(
-//         bytes memory _data,
-//         bytes memory _s, bytes memory _e, bytes memory _m
-//     ) public view returns (uint) {
-//         return pkcs1Sha256Verify(sha256(_data),_s,_e,_m);
-//     }
-
-// }
-
 interface IERC20 {
     /**
      * @dev Returns the amount of tokens in existence.
@@ -758,13 +605,6 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
         uint256 blockCreation;
     }
 
-
-    struct KeyInfo{
-        bytes keyModule;
-        bytes exponent;
-        bool keyStatus;
-    }
-
     IMilk2Token public milk;
 
     mapping (address => UserInfo) private userInfo;
@@ -774,8 +614,6 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
 
 
     PoolInfo[] private poolInfo;
-
-    KeyInfo[] private keyInfo;
 
 
     uint256 private totalPoints;
@@ -795,6 +633,7 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
         milk = _milk;
         epochs = _epochs;
         multipliers = _multipliers;
+        
         //For debug
         trustedSigner[msg.sender]=true;
     }
@@ -836,7 +675,7 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
     *@dev set address that can sign
     */
     function setTrustedSigner(address _signer, bool _isValid) public onlyOwner {
-        trustedSigner[_signer]=_isValid;
+        trustedSigner[_signer] = _isValid;
     }
 
 
@@ -883,35 +722,6 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
     }
 
 
-    /**
-      * @dev Update the given pool's allocation point. Can only be called by the owner.
-      *
-      * @param _keyId - unique id key in contract storage
-      * @param _amount -
-      * @param _lastBlockNumber - last update number of block
-      * @param _currentBlockNumber - last update block in Ethereum mainnet
-      * @param _sign - bytes32 signature
-      */
-    function withdraw(  uint256 _keyId,
-                        uint256 _amount,
-                        uint256 _lastBlockNumber,
-                        uint256 _currentBlockNumber,
-                        bytes memory _sign) public {
-        require(_keyId < keyInfo.length, "This key is not exist");
-        require(keyInfo[_keyId].keyStatus, "This key is disable");
-        require(_currentBlockNumber < block.number, "currentBlockNumber cannot be larger than the last block");
-        //require(pkcs1Sha256Verify(getData(_amount, _lastBlockNumber, _currentBlockNumber, msg.sender), _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
-        require(userInfo[msg.sender].lastBlock == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
-
-        userInfo[msg.sender].rewardDebt = userInfo[msg.sender].rewardDebt.add(_amount);
-        userInfo[msg.sender].lastBlock = _currentBlockNumber;
-        if (_amount > 0) {
-            milk.mint(msg.sender, _amount);
-        }
-        emit Harvest(msg.sender, _amount, _currentBlockNumber);
-    }
-
-
     function registration() public {
         require(userInfo[msg.sender].lastBlock == 0, "User already exist");
         UserInfo storage _userInfo = userInfo[msg.sender];
@@ -931,29 +741,52 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
     ///////////////////////////////////////////////////////////////////////////////////////
     ///// Refactored items
     /////////////////////////////////////////////////////////////////////////////////////
+    /**
+    *@dev Prepare abi encoded message
+    */
     function getMsgForSign(
         uint256 _amount,
         uint256 _lastBlockNumber,
         uint256 _currentBlockNumber,
-        address _sender) public pure returns(bytes32) {
+        address _sender) public pure returns(bytes32) 
+    {
         return keccak256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber, _sender));
     }
-
+    
+    /**
+    * @dev prepare hash for sign with Ethereum comunity convention
+    *see links below
+    *https://ethereum.stackexchange.com/questions/24547/sign-without-x19ethereum-signed-message-prefix?rq=1
+    *https://github.com/ethereum/EIPs/pull/712
+    *https://programtheblockchain.com/posts/2018/02/17/signing-and-verifying-messages-in-ethereum/
+    */
+    function preSignMsg(bytes32 _msg) public pure returns(bytes32) {
+        return _msg.toEthSignedMessageHash();
+    }
+    
+    /**
+    * @dev Check signature and mint tokens
+    * @param  _amount - subj
+    * @param  _lastBlockNumber - subj
+    * @param  _currentBlockNumber - subj
+    * @param  _msgForSign - hash for sign with Ethereum style prefix!!!
+    * @param  _signature  - signature
+    */
     function harvest(   
         uint256 _amount,
         uint256 _lastBlockNumber,
         uint256 _currentBlockNumber,
         bytes32 _msgForSign,
-        bytes memory _sign) 
+        bytes memory _signature) 
     public 
     {
-        require(_currentBlockNumber < block.number, "currentBlockNumber cannot be larger than the last block");
-        //require(pkcs1Sha256Verify(getData(_amount, _lastBlockNumber, _currentBlockNumber, msg.sender), _sign, keyInfo[_keyId].exponent, keyInfo[_keyId].keyModule) == 0, "Incorrect data");
+        require(_currentBlockNumber <= block.number, "currentBlockNumber cannot be larger than the last block");
+        
         //Double spend check
         require(userInfo[msg.sender].lastBlock == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
         
         //1. Lets check signer
-        address signedBy = _msgForSign.recover(_sign);
+        address signedBy = _msgForSign.recover(_signature);
         require(trustedSigner[signedBy] == true, "Signature check failed!");
 
         //2. Check signed msg integrety
@@ -962,8 +795,8 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
             _lastBlockNumber, 
             _currentBlockNumber, 
             msg.sender
-        )
-        require(actualMsg == _msgForSign,"Integrety check failed!");
+        );
+        require(actualMsg.toEthSignedMessageHash() == _msgForSign,"Integrety check failed!");
 
         //Actions
         userInfo[msg.sender].rewardDebt = userInfo[msg.sender].rewardDebt.add(_amount);
@@ -973,63 +806,53 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
         }
         emit Harvest(msg.sender, _amount, _currentBlockNumber);
     }
+
+
+    /**
+    * @dev Check signature and mint tokens
+    * @param  _amount - subj
+    * @param  _lastBlockNumber - subj
+    * @param  _currentBlockNumber - subj
+    * @param  _msgForSign - hash for sign with Ethereum style prefix!!!
+    * @param  _signature  - signature
+    */
+    function debug_harvest(   
+        uint256 _amount,
+        uint256 _lastBlockNumber,
+        uint256 _currentBlockNumber,
+        bytes32 _msgForSign,
+        bytes memory _signature) 
+    public view returns(address _signer, bytes32 _msg, bytes32 _prefixedMsg)
+    {
+        require(_currentBlockNumber <= block.number, "currentBlockNumber cannot be larger than the last block");
+        
+        //Double spend check
+        require(userInfo[msg.sender].lastBlock == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
+        
+        //1. Lets check signer
+        address signedBy = _msgForSign.recover(_signature);
+        //require(trustedSigner[signedBy] == true, "Signature check failed!");
+
+        //2. Check signed msg integrety
+        bytes32 actualMsg = getMsgForSign(
+            _amount, 
+            _lastBlockNumber, 
+            _currentBlockNumber, 
+            msg.sender
+        );
+        //require(actualMsg.toEthSignedMessageHash() == _msgForSign,"Integrety check failed!");
+
+        // //Actions
+        // userInfo[msg.sender].rewardDebt = userInfo[msg.sender].rewardDebt.add(_amount);
+        // userInfo[msg.sender].lastBlock = _currentBlockNumber;
+        // if (_amount > 0) {
+        //     milk.mint(msg.sender, _amount);
+        // }
+        // emit Harvest(msg.sender, _amount, _currentBlockNumber);
+        return (signedBy, actualMsg, actualMsg.toEthSignedMessageHash());
+    }
     ///////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-      * @dev
-      *
-      * @param _newModule - new module of key
-      * @param _keyExponent - new exponent of key
-      * Can only be called by the current owner.
-      */
-    function addNewKey(bytes memory _newModule, bytes memory _keyExponent) public onlyOwner returns(uint256) {
-        keyInfo.push(KeyInfo({keyModule: _newModule, exponent: _keyExponent, keyStatus: true}));
-        emit AddNewKey(_newModule, keyInfo.length - 1);
-        return keyInfo.length - 1;
-    }
-
-
-    /**
-      * @dev
-      *
-      * @param _keyId - available public key for signing.
-      * Can only be called by the current owner.
-      */
-    function enableKey(uint256 _keyId) public onlyOwner {
-        require(!keyInfo[_keyId].keyStatus, "This key already enable");
-        keyInfo[_keyId].keyStatus = true;
-    }
-
-
-    /**
-      * @dev
-      *
-      * @param _keyId - available public key for signing.
-      * Can only be called by the current owner.
-      */
-    function disableKey(uint256 _keyId) public onlyOwner {
-        require(keyInfo[_keyId].keyStatus, "This key already disable");
-        keyInfo[_keyId].keyStatus = false;
-    }
-
-
-    /**
-      * @dev Return info about available key
-      * @param _keyId - available public key for signing
-      */
-    function getKeyInfo(uint256 _keyId) public view returns(bytes memory _key, bytes memory _exponent, bool _status) {
-        _key = keyInfo[_keyId].keyModule;
-        _exponent = keyInfo[_keyId].exponent;
-        _status = keyInfo[_keyId].keyStatus;
-    }
-
-
-    /**
-      * @dev - return Number of keys
-      */
-    function getKeyCount() public view returns(uint256) {
-        return keyInfo.length;
-    }
+    ///////////////////////////////////////////////////////////////////////////////////////
 
 
     /**
