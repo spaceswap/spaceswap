@@ -28,7 +28,7 @@ interface IERC165 {
     @dev See https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md
     Note: The ERC-165 identifier for this interface is 0xd9b67a26.
  */
-contract IERC1155 is IERC165 {
+interface IERC1155 is IERC165 {
     /**
         @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see "Safe Transfer Rules" section of the standard).
         The `_operator` argument MUST be msg.sender.
@@ -1600,7 +1600,8 @@ contract Galaxy is Ownable {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accMilkPerShare = pool.accMilkPerShare;
-        uint256 NFTSupply = pool.nftToken.balanceOf(address(this));
+        uint256 _id = 0; // todo
+        uint256 NFTSupply = pool.nftToken.balanceOf(address(this), _id);
 
         if (block.number > pool.lastRewardBlock && NFTSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
@@ -1624,10 +1625,11 @@ contract Galaxy is Ownable {
     // Update reward variables of the given pool to be up-to-date.
     function updatePool(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
+        uint256 _id = 0; // todo
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
-        uint256 NFTSupply = pool.nftToken.balanceOf(address(this));
+        uint256 NFTSupply = pool.nftToken.balanceOf(address(this), _id);
         if (NFTSupply == 0) {
             pool.lastRewardBlock = block.number;
             return;
@@ -1648,6 +1650,7 @@ contract Galaxy is Ownable {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
+        uint256 _id = 0; // todo
         if (user.amount > 0) {
             uint256 pending = user.amount.mul(pool.accMilkPerShare).div(1e12).sub(user.rewardDebt);
             safeMilkTransfer(msg.sender, pending);
