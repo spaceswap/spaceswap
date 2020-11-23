@@ -3,136 +3,6 @@
 pragma solidity ^0.6.12;
 
 /**
- * @dev Interface of the ERC165 standard, as defined in the
- * https://eips.ethereum.org/EIPS/eip-165[EIP].
- *
- * Implementers can declare support of contract interfaces, which can then be
- * queried by others ({ERC165Checker}).
- *
- * For an implementation, see {ERC165}.
- */
-interface IERC165 {
-    /**
-     * @dev Returns true if this contract implements the interface defined by
-     * `interfaceId`. See the corresponding
-     * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]
-     * to learn more about how these ids are created.
-     *
-     * This function call must use less than 30 000 gas.
-     */
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
-}
-
-/**
-    @title ERC-1155 Multi Token Standard
-    @dev See https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md
-    Note: The ERC-165 identifier for this interface is 0xd9b67a26.
- */
-interface IERC1155 is IERC165 {
-    /**
-        @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see "Safe Transfer Rules" section of the standard).
-        The `_operator` argument MUST be msg.sender.
-        The `_from` argument MUST be the address of the holder whose balance is decreased.
-        The `_to` argument MUST be the address of the recipient whose balance is increased.
-        The `_id` argument MUST be the token type being transferred.
-        The `_value` argument MUST be the number of tokens the holder balance is decreased by and match what the recipient balance is increased by.
-        When minting/creating tokens, the `_from` argument MUST be set to `0x0` (i.e. zero address).
-        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).
-    */
-    event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
-
-    /**
-        @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see "Safe Transfer Rules" section of the standard).
-        The `_operator` argument MUST be msg.sender.
-        The `_from` argument MUST be the address of the holder whose balance is decreased.
-        The `_to` argument MUST be the address of the recipient whose balance is increased.
-        The `_ids` argument MUST be the list of tokens being transferred.
-        The `_values` argument MUST be the list of number of tokens (matching the list and order of tokens specified in _ids) the holder balance is decreased by and match what the recipient balance is increased by.
-        When minting/creating tokens, the `_from` argument MUST be set to `0x0` (i.e. zero address).
-        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).
-    */
-    event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
-
-    /**
-        @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absense of an event assumes disabled).
-    */
-    event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
-
-    /**
-        @dev MUST emit when the URI is updated for a token ID.
-        URIs are defined in RFC 3986.
-        The URI MUST point a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema".
-    */
-    event URI(string _value, uint256 indexed _id);
-
-    /**
-        @notice Transfers `_value` amount of an `_id` from the `_from` address to the `_to` address specified (with safety call).
-        @dev Caller must be approved to manage the tokens being transferred out of the `_from` account (see "Approval" section of the standard).
-        MUST revert if `_to` is the zero address.
-        MUST revert if balance of holder for token `_id` is lower than the `_value` sent.
-        MUST revert on any other error.
-        MUST emit the `TransferSingle` event to reflect the balance change (see "Safe Transfer Rules" section of the standard).
-        After the above conditions are met, this function MUST check if `_to` is a smart contract (e.g. code size > 0). If so, it MUST call `onERC1155Received` on `_to` and act appropriately (see "Safe Transfer Rules" section of the standard).
-        @param _from    Source address
-        @param _to      Target address
-        @param _id      ID of the token type
-        @param _value   Transfer amount
-        @param _data    Additional data with no specified format, MUST be sent unaltered in call to `onERC1155Received` on `_to`
-    */
-    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external;
-
-    /**
-        @notice Transfers `_values` amount(s) of `_ids` from the `_from` address to the `_to` address specified (with safety call).
-        @dev Caller must be approved to manage the tokens being transferred out of the `_from` account (see "Approval" section of the standard).
-        MUST revert if `_to` is the zero address.
-        MUST revert if length of `_ids` is not the same as length of `_values`.
-        MUST revert if any of the balance(s) of the holder(s) for token(s) in `_ids` is lower than the respective amount(s) in `_values` sent to the recipient.
-        MUST revert on any other error.
-        MUST emit `TransferSingle` or `TransferBatch` event(s) such that all the balance changes are reflected (see "Safe Transfer Rules" section of the standard).
-        Balance changes and events MUST follow the ordering of the arrays (_ids[0]/_values[0] before _ids[1]/_values[1], etc).
-        After the above conditions for the transfer(s) in the batch are met, this function MUST check if `_to` is a smart contract (e.g. code size > 0). If so, it MUST call the relevant `ERC1155TokenReceiver` hook(s) on `_to` and act appropriately (see "Safe Transfer Rules" section of the standard).
-        @param _from    Source address
-        @param _to      Target address
-        @param _ids     IDs of each token type (order and length must match _values array)
-        @param _values  Transfer amounts per token type (order and length must match _ids array)
-        @param _data    Additional data with no specified format, MUST be sent unaltered in call to the `ERC1155TokenReceiver` hook(s) on `_to`
-    */
-    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external;
-
-    /**
-        @notice Get the balance of an account's Tokens.
-        @param _owner  The address of the token holder
-        @param _id     ID of the Token
-        @return        The _owner's balance of the Token type requested
-     */
-    function balanceOf(address _owner, uint256 _id) external view returns (uint256);
-
-    /**
-        @notice Get the balance of multiple account/token pairs
-        @param _owners The addresses of the token holders
-        @param _ids    ID of the Tokens
-        @return        The _owner's balance of the Token types requested (i.e. balance for each (owner, id) pair)
-     */
-    function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external view returns (uint256[] memory);
-
-    /**
-        @notice Enable or disable approval for a third party ("operator") to manage all of the caller's tokens.
-        @dev MUST emit the ApprovalForAll event on success.
-        @param _operator  Address to add to the set of authorized operators
-        @param _approved  True if the operator is approved, false to revoke approval
-    */
-    function setApprovalForAll(address _operator, bool _approved) external;
-
-    /**
-        @notice Queries the approval status of an operator for a given owner.
-        @param _owner     The owner of the Tokens
-        @param _operator  Address of authorized operator
-        @return           True if the operator is approved, false if not
-    */
-    function isApprovedForAll(address _owner, address _operator) external view returns (bool);
-}
-
-/**
  * @dev Interface of the ERC20 standard as defined in the EIP.
  */
 interface IERC20 {
@@ -805,6 +675,245 @@ library EnumerableSet {
      */
     function at(UintSet storage set, uint256 index) internal view returns (uint256) {
         return uint256(_at(set._inner, index));
+    }
+}
+
+/**
+ * @dev Interface of the ERC165 standard, as defined in the
+ * https://eips.ethereum.org/EIPS/eip-165[EIP].
+ *
+ * Implementers can declare support of contract interfaces, which can then be
+ * queried by others ({ERC165Checker}).
+ *
+ * For an implementation, see {ERC165}.
+ */
+interface IERC165 {
+    /**
+     * @dev Returns true if this contract implements the interface defined by
+     * `interfaceId`. See the corresponding
+     * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]
+     * to learn more about how these ids are created.
+     *
+     * This function call must use less than 30 000 gas.
+     */
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+}
+
+/**
+ * @dev Implementation of the {IERC165} interface.
+ *
+ * Contracts may inherit from this and call {_registerInterface} to declare
+ * their support of an interface.
+ */
+abstract contract ERC165 is IERC165 {
+    /*
+     * bytes4(keccak256('supportsInterface(bytes4)')) == 0x01ffc9a7
+     */
+    bytes4 private constant _INTERFACE_ID_ERC165 = 0x01ffc9a7;
+
+    /**
+     * @dev Mapping of interface ids to whether or not it's supported.
+     */
+    mapping(bytes4 => bool) private _supportedInterfaces;
+
+    constructor () internal {
+        // Derived contracts need only register support for their own interfaces,
+        // we register support for ERC165 itself here
+        _registerInterface(_INTERFACE_ID_ERC165);
+    }
+
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     *
+     * Time complexity O(1), guaranteed to always use less than 30 000 gas.
+     */
+    function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
+        return _supportedInterfaces[interfaceId];
+    }
+
+    /**
+     * @dev Registers the contract as an implementer of the interface defined by
+     * `interfaceId`. Support of the actual ERC165 interface is automatic and
+     * registering its interface id is not required.
+     *
+     * See {IERC165-supportsInterface}.
+     *
+     * Requirements:
+     *
+     * - `interfaceId` cannot be the ERC165 invalid interface (`0xffffffff`).
+     */
+    function _registerInterface(bytes4 interfaceId) internal virtual {
+        require(interfaceId != 0xffffffff, "ERC165: invalid interface id");
+        _supportedInterfaces[interfaceId] = true;
+    }
+}
+
+/**
+    @title ERC-1155 Multi Token Standard
+    @dev See https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md
+    Note: The ERC-165 identifier for this interface is 0xd9b67a26.
+ */
+interface IERC1155 is IERC165 {
+    /**
+        @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see "Safe Transfer Rules" section of the standard).
+        The `_operator` argument MUST be msg.sender.
+        The `_from` argument MUST be the address of the holder whose balance is decreased.
+        The `_to` argument MUST be the address of the recipient whose balance is increased.
+        The `_id` argument MUST be the token type being transferred.
+        The `_value` argument MUST be the number of tokens the holder balance is decreased by and match what the recipient balance is increased by.
+        When minting/creating tokens, the `_from` argument MUST be set to `0x0` (i.e. zero address).
+        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).
+    */
+    event TransferSingle(address indexed _operator, address indexed _from, address indexed _to, uint256 _id, uint256 _value);
+
+    /**
+        @dev Either `TransferSingle` or `TransferBatch` MUST emit when tokens are transferred, including zero value transfers as well as minting or burning (see "Safe Transfer Rules" section of the standard).
+        The `_operator` argument MUST be msg.sender.
+        The `_from` argument MUST be the address of the holder whose balance is decreased.
+        The `_to` argument MUST be the address of the recipient whose balance is increased.
+        The `_ids` argument MUST be the list of tokens being transferred.
+        The `_values` argument MUST be the list of number of tokens (matching the list and order of tokens specified in _ids) the holder balance is decreased by and match what the recipient balance is increased by.
+        When minting/creating tokens, the `_from` argument MUST be set to `0x0` (i.e. zero address).
+        When burning/destroying tokens, the `_to` argument MUST be set to `0x0` (i.e. zero address).
+    */
+    event TransferBatch(address indexed _operator, address indexed _from, address indexed _to, uint256[] _ids, uint256[] _values);
+
+    /**
+        @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absense of an event assumes disabled).
+    */
+    event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
+
+    /**
+        @dev MUST emit when the URI is updated for a token ID.
+        URIs are defined in RFC 3986.
+        The URI MUST point a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema".
+    */
+    event URI(string _value, uint256 indexed _id);
+
+    /**
+        @notice Transfers `_value` amount of an `_id` from the `_from` address to the `_to` address specified (with safety call).
+        @dev Caller must be approved to manage the tokens being transferred out of the `_from` account (see "Approval" section of the standard).
+        MUST revert if `_to` is the zero address.
+        MUST revert if balance of holder for token `_id` is lower than the `_value` sent.
+        MUST revert on any other error.
+        MUST emit the `TransferSingle` event to reflect the balance change (see "Safe Transfer Rules" section of the standard).
+        After the above conditions are met, this function MUST check if `_to` is a smart contract (e.g. code size > 0). If so, it MUST call `onERC1155Received` on `_to` and act appropriately (see "Safe Transfer Rules" section of the standard).
+        @param _from    Source address
+        @param _to      Target address
+        @param _id      ID of the token type
+        @param _value   Transfer amount
+        @param _data    Additional data with no specified format, MUST be sent unaltered in call to `onERC1155Received` on `_to`
+    */
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external;
+
+    /**
+        @notice Transfers `_values` amount(s) of `_ids` from the `_from` address to the `_to` address specified (with safety call).
+        @dev Caller must be approved to manage the tokens being transferred out of the `_from` account (see "Approval" section of the standard).
+        MUST revert if `_to` is the zero address.
+        MUST revert if length of `_ids` is not the same as length of `_values`.
+        MUST revert if any of the balance(s) of the holder(s) for token(s) in `_ids` is lower than the respective amount(s) in `_values` sent to the recipient.
+        MUST revert on any other error.
+        MUST emit `TransferSingle` or `TransferBatch` event(s) such that all the balance changes are reflected (see "Safe Transfer Rules" section of the standard).
+        Balance changes and events MUST follow the ordering of the arrays (_ids[0]/_values[0] before _ids[1]/_values[1], etc).
+        After the above conditions for the transfer(s) in the batch are met, this function MUST check if `_to` is a smart contract (e.g. code size > 0). If so, it MUST call the relevant `ERC1155TokenReceiver` hook(s) on `_to` and act appropriately (see "Safe Transfer Rules" section of the standard).
+        @param _from    Source address
+        @param _to      Target address
+        @param _ids     IDs of each token type (order and length must match _values array)
+        @param _values  Transfer amounts per token type (order and length must match _ids array)
+        @param _data    Additional data with no specified format, MUST be sent unaltered in call to the `ERC1155TokenReceiver` hook(s) on `_to`
+    */
+    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external;
+
+    /**
+        @notice Get the balance of an account's Tokens.
+        @param _owner  The address of the token holder
+        @param _id     ID of the Token
+        @return        The _owner's balance of the Token type requested
+     */
+    function balanceOf(address _owner, uint256 _id) external view returns (uint256);
+
+    /**
+        @notice Get the balance of multiple account/token pairs
+        @param _owners The addresses of the token holders
+        @param _ids    ID of the Tokens
+        @return        The _owner's balance of the Token types requested (i.e. balance for each (owner, id) pair)
+     */
+    function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external view returns (uint256[] memory);
+
+    /**
+        @notice Enable or disable approval for a third party ("operator") to manage all of the caller's tokens.
+        @dev MUST emit the ApprovalForAll event on success.
+        @param _operator  Address to add to the set of authorized operators
+        @param _approved  True if the operator is approved, false to revoke approval
+    */
+    function setApprovalForAll(address _operator, bool _approved) external;
+
+    /**
+        @notice Queries the approval status of an operator for a given owner.
+        @param _owner     The owner of the Tokens
+        @param _operator  Address of authorized operator
+        @return           True if the operator is approved, false if not
+    */
+    function isApprovedForAll(address _owner, address _operator) external view returns (bool);
+}
+
+/**
+ * _Available since v3.1._
+ */
+interface IERC1155Receiver is IERC165 {
+    /**
+        @dev Handles the receipt of a single ERC1155 token type. This function is
+        called at the end of a `safeTransferFrom` after the balance has been updated.
+        To accept the transfer, this must return
+        `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`
+        (i.e. 0xf23a6e61, or its own function selector).
+        @param operator The address which initiated the transfer (i.e. msg.sender)
+        @param from The address which previously owned the token
+        @param id The ID of the token being transferred
+        @param value The amount of tokens being transferred
+        @param data Additional data with no specified format
+        @return `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))` if transfer is allowed
+    */
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    )
+    external
+    returns(bytes4);
+
+    /**
+        @dev Handles the receipt of a multiple ERC1155 token types. This function
+        is called at the end of a `safeBatchTransferFrom` after the balances have
+        been updated. To accept the transfer(s), this must return
+        `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`
+        (i.e. 0xbc197c81, or its own function selector).
+        @param operator The address which initiated the batch transfer (i.e. msg.sender)
+        @param from The address which previously owned the token
+        @param ids An array containing ids of each token being transferred (order and length must match values array)
+        @param values An array containing amounts of each token being transferred (order and length must match ids array)
+        @param data Additional data with no specified format
+        @return `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))` if transfer is allowed
+    */
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    )
+    external
+    returns(bytes4);
+}
+
+abstract contract ERC1155Receiver is ERC165, IERC1155Receiver {
+    constructor() internal {
+        _registerInterface(
+            ERC1155Receiver(0).onERC1155Received.selector ^
+            ERC1155Receiver(0).onERC1155BatchReceived.selector
+        );
     }
 }
 
@@ -1486,9 +1595,11 @@ contract MilkyWayToken is ERC20("MilkyWay Token by SpaceSwap v2", "MILK2"), Gove
 //
 // Have fun reading it. Hopefully it's bug-free. God bless.
 */
-contract Galaxy is Ownable {
+contract GalaxyNFT is Ownable, ERC1155Receiver {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+
+    IERC1155 public NFTToken;
 
     // Info of each user.
     struct UserInfo {
@@ -1498,7 +1609,7 @@ contract Galaxy is Ownable {
 
     // Info of each pool.
     struct PoolInfo {
-        IERC1155 nftToken;           // Address of NFT token contract.
+        uint256 nftId;           // NFT ID
         uint256 allocPoint;       // How many allocation points assigned to this pool. MILK2s to distribute per block.
         uint256 lastRewardBlock;  // Last block number that MILK2s distribution occurs.
         uint256 accMilkPerShare; // Accumulated MILK2s per share, times 1e12. See below.
@@ -1516,7 +1627,7 @@ contract Galaxy is Ownable {
     // The block number when MILK2 mining starts.
     uint256 public startBlock;
 
-    uint256 internal milkPerBlock = 100000000000000000;
+    uint256 internal milkPerBlock = 100; // 1
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -1532,13 +1643,9 @@ contract Galaxy is Ownable {
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
 
-    constructor(
-        MilkyWayToken _milk,
-        address _devAddr,
-        address _distributor,
-        uint256 _startBlock
-    ) public {
+    constructor(MilkyWayToken _milk, IERC1155 _nft, address _devAddr, address _distributor, uint256 _startBlock) public{
         milk = _milk;
+        NFTToken = _nft;
         devAddr = _devAddr;
         distributor = _distributor;
         startBlock = _startBlock;
@@ -1556,25 +1663,29 @@ contract Galaxy is Ownable {
     }
 
 
+    function approvalNFTTransfers() public onlyOwner {
+        NFTToken.setApprovalForAll(address(this), true);
+    }
+
+
     // Add a new NFT to the pool. Can only be called by the owner.
     // XXX DO NOT add the same NFT token more than once. Rewards will be messed up if you do.
-    function add(uint256 _allocPoint, IERC1155 _nftToken, bool _withUpdate) public onlyOwner {
+    function addFarmingToken(uint256 _allocPoint, uint256 _nftId, bool _withUpdate) public onlyOwner {
         if (_withUpdate) {
             massUpdatePools();
         }
         uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
-        poolInfo.push(PoolInfo({
-        nftToken: _nftToken,
-        allocPoint: _allocPoint,
-        lastRewardBlock: lastRewardBlock,
-        accMilkPerShare: 0
+        poolInfo.push(PoolInfo({nftId: _nftId,
+                                allocPoint: _allocPoint,
+                                lastRewardBlock: lastRewardBlock,
+                                accMilkPerShare: 0
         }));
     }
 
 
     // Update the given pool's MILK2 allocation point. Can only be called by the owner.
-    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) public onlyOwner {
+    function setFarmingToken(uint256 _pid, uint256 _allocPoint, bool _withUpdate) public onlyOwner {
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -1600,15 +1711,13 @@ contract Galaxy is Ownable {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accMilkPerShare = pool.accMilkPerShare;
-        uint256 _id = 0; // todo
-        uint256 NFTSupply = pool.nftToken.balanceOf(address(this), _id);
+        uint256 NFTSupply = NFTToken.balanceOf(address(this), pool.nftId);
 
         if (block.number > pool.lastRewardBlock && NFTSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-            uint256 milkReward = (multiplier.mul(1e18)).mul(pool.allocPoint).div(totalAllocPoint);
+            uint256 milkReward = (multiplier.mul(1e16)).mul(pool.allocPoint).div(totalAllocPoint);
             accMilkPerShare = accMilkPerShare.add(milkReward.mul(1e12).div(NFTSupply));
         }
-
         return user.amount.mul(accMilkPerShare).div(1e12).sub(user.rewardDebt);
     }
 
@@ -1625,18 +1734,17 @@ contract Galaxy is Ownable {
     // Update reward variables of the given pool to be up-to-date.
     function updatePool(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
-        uint256 _id = 0; // todo
+
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
-        uint256 NFTSupply = pool.nftToken.balanceOf(address(this), _id);
+        uint256 NFTSupply = NFTToken.balanceOf(address(this), pool.nftId);
         if (NFTSupply == 0) {
             pool.lastRewardBlock = block.number;
             return;
         }
-
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-        uint256 milkReward = multiplier.mul(1e18).mul(pool.allocPoint).div(totalAllocPoint);
+        uint256 milkReward = multiplier.mul(1e16).mul(pool.allocPoint).div(totalAllocPoint);
         milk.mint(devAddr, milkReward.mul(3).div(100)); // 3% developers
         milk.mint(distributor, milkReward.div(100)); // 1% shakeHolders
         milk.mint(address(this), milkReward);
@@ -1646,16 +1754,17 @@ contract Galaxy is Ownable {
 
 
     // Deposit NFT tokens to Interstellar for MILK allocation.
-    function deposit(uint256 _pid, uint256 _amount) public {
+    function depositFarmingToken(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
-        uint256 _id = 0; // todo
+
         if (user.amount > 0) {
             uint256 pending = user.amount.mul(pool.accMilkPerShare).div(1e12).sub(user.rewardDebt);
             safeMilkTransfer(msg.sender, pending);
         }
-        pool.nftToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+
+        NFTToken.safeTransferFrom(address(msg.sender), address(this), pool.nftId, _amount, ""); //
         user.amount = user.amount.add(_amount);
         user.rewardDebt = user.amount.mul(pool.accMilkPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
@@ -1663,7 +1772,7 @@ contract Galaxy is Ownable {
 
 
     // Withdraw NFT tokens from Interstellar.
-    function withdraw(uint256 _pid, uint256 _amount) public {
+    function withdrawFarmingToken(uint256 _pid, uint256 _amount, bytes calldata _data) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
@@ -1672,16 +1781,16 @@ contract Galaxy is Ownable {
         safeMilkTransfer(msg.sender, pending);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accMilkPerShare).div(1e12);
-        pool.nftToken.safeTransfer(address(msg.sender), _amount);
+        NFTToken.safeTransferFrom(address(msg.sender), address(this), pool.nftId, _amount, _data);
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid) public {
+    function emergencyWithdrawFarmingToken(uint256 _pid,  bytes calldata _datat) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        pool.nftToken.safeTransfer(address(msg.sender), user.amount);
+        NFTToken.safeTransferFrom(address(this), address(msg.sender), pool.nftId, user.amount, _datat);
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
@@ -1700,7 +1809,7 @@ contract Galaxy is Ownable {
 
 
     // Update dev address by the previous dev.
-    function dev(address _devAddr) public {
+    function setDevAddress(address _devAddr) public {
         require(msg.sender == devAddr, "dev: wut?");
         devAddr = _devAddr;
     }
@@ -1710,6 +1819,16 @@ contract Galaxy is Ownable {
     function updateDistributor(address _distributor) public {
         require(msg.sender == devAddr, "dev: wut?");
         distributor = _distributor;
+    }
+
+
+    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external override returns (bytes4) {
+        return IERC1155Receiver.onERC1155Received.selector;
+    }
+
+
+    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata , bytes calldata) external override returns (bytes4) {
+        return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-
+// https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
