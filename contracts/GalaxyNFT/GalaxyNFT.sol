@@ -1588,6 +1588,7 @@ contract MilkyWayToken is ERC20("MilkyWay Token by SpaceSwap v2", "MILK2"), Gove
     }
 }
 
+
 /**
 // Note that it's ownable and the owner wields tremendous power. The ownership
 // will be transferred to a governance smart contract once MILKYWAY is sufficiently
@@ -1599,7 +1600,7 @@ contract GalaxyNFT is Ownable, ERC1155Receiver {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC1155 public NFTToken;
+
 
     // Info of each user.
     struct UserInfo {
@@ -1617,6 +1618,10 @@ contract GalaxyNFT is Ownable, ERC1155Receiver {
 
     // The MILKYWAY_Token!
     MilkyWayToken public milk;
+
+    IERC1155 public NFTToken;
+
+    IERC20 public lpToken;
 
     // Dev address.
     address public devAddr;
@@ -1643,12 +1648,13 @@ contract GalaxyNFT is Ownable, ERC1155Receiver {
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
 
-    constructor(MilkyWayToken _milk, IERC1155 _nft, address _devAddr, address _distributor, uint256 _startBlock) public{
+    constructor(MilkyWayToken _milk, IERC1155 _nft, address _devAddr, address _distributor, uint256 _startBlock, IERC20 _lpToken) public{
         milk = _milk;
         NFTToken = _nft;
         devAddr = _devAddr;
         distributor = _distributor;
         startBlock = _startBlock;
+        lpToken = _lpToken;
     }
 
 
@@ -1755,6 +1761,7 @@ contract GalaxyNFT is Ownable, ERC1155Receiver {
 
     // Deposit NFT tokens to Interstellar for MILK allocation.
     function depositFarmingToken(uint256 _pid, uint256 _amount) public {
+        require(lpToken.balanceOf(msg.sender) > 0, "Insufficient LPtoken balance");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
@@ -1770,9 +1777,9 @@ contract GalaxyNFT is Ownable, ERC1155Receiver {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
-
     // Withdraw NFT tokens from Interstellar.
-    function withdrawFarmingToken(uint256 _pid, uint256 _amount, bytes calldata _data) public {
+    function withdrawFarmingToken(uint256 _pid, uint256 _amount) public {
+        require(lpToken.balanceOf(msg.sender) > 0, "Insufficient LPtoken balance");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
@@ -1781,16 +1788,15 @@ contract GalaxyNFT is Ownable, ERC1155Receiver {
         safeMilkTransfer(msg.sender, pending);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accMilkPerShare).div(1e12);
-        NFTToken.safeTransferFrom(address(msg.sender), address(this), pool.nftId, _amount, _data);
+        NFTToken.safeTransferFrom(address(this), address(msg.sender), pool.nftId, _amount, "");
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdrawFarmingToken(uint256 _pid,  bytes calldata _datat) public {
+    function emergencyWithdrawFarmingToken(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        NFTToken.safeTransferFrom(address(this), address(msg.sender), pool.nftId, user.amount, _datat);
+        NFTToken.safeTransferFrom(address(this), address(msg.sender), pool.nftId, user.amount, "");
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
