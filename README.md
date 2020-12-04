@@ -14,10 +14,6 @@
 
 [Gravity](https://etherscan.io/address/0x159BA6999C7602956d691A54CFaa93563EC8d16B#code)
 
-[T34](https://etherscan.io/token/0x59d11d8823e4512c6adbfae80cd9d635f015a6c9)
-
-[qDefi](https://etherscan.io/token/0xfee4DBe2751bF8d1B1B861aAF9664961F19Ce91A)
-
 [BabyMilk2](https://etherscan.io/token/0xe00edf07bbab7f9e7a93ffbffdd4c16c5dbc6b03)
 
 [ShadowStaking](https://etherscan.io/address/0xe3e17fa901591aeecdf0a928489b5362fce3c0ca#code)
