@@ -1,5 +1,5 @@
 /**
- *Submitted for verification at Etherscan.io on 2020-11-19
+ *Submitted for verification at Etherscan.io on 2021-02-01
 */
 
 // SPDX-License-Identifier: MIT
@@ -930,6 +930,16 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
         if (block.number > epochs[4]) {
             return multipliers[4];
         }
+    }
+
+
+    function setEpoch(uint256 _id, uint256 _amount) public onlyOwner {
+        epochs[_id] = _amount;
+    }
+
+
+    function setMultiplier(uint256 _id, uint256 _amount) public onlyOwner {
+        multipliers[_id] = _amount;
     }
 
 }
