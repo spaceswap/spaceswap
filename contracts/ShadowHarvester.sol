@@ -592,7 +592,7 @@ contract MultiplierMath {
 
 }
 
-contract ShadowStakingV2 is Ownable,  MultiplierMath {
+contract ShadowStakingV3 is Ownable,  MultiplierMath {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
@@ -667,13 +667,10 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
      * Can only be called by the current owner.
      */
     function setPoll(uint256 _poolPid, uint256 _newPoints) public onlyOwner {
-        PoolInfo memory _poolInfo = poolInfo[_poolPid];
-        uint256 _previousPoints = poolInfo[_poolPid].allocPointAmount;
-        _poolInfo.allocPointAmount = _newPoints;
-
         totalPoints = totalPoints.sub(poolInfo[_poolPid].allocPointAmount).add(_newPoints);
-        emit PoolUpdate(_poolPid, _previousPoints, _newPoints);
+        poolInfo[_poolPid].allocPointAmount = _newPoints;
     }
+
 
     /**
     *@dev set address that can sign
@@ -684,10 +681,9 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
 
 
     function getPool(uint256 _poolPid) public view returns(address _lpToken, uint256 _block, uint256 _weight) {
-        PoolInfo memory _poolInfo = poolInfo[_poolPid];
-        _lpToken = address(_poolInfo.lpToken);
-        _block = _poolInfo.blockCreation;
-        _weight = _poolInfo.allocPointAmount;
+        _lpToken = address(poolInfo[_poolPid].lpToken);
+        _block = poolInfo[_poolPid].blockCreation;
+        _weight = poolInfo[_poolPid].allocPointAmount;
     }
 
 
@@ -767,6 +763,7 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
     function preSignMsg(bytes32 _msg) public pure returns(bytes32) {
         return _msg.toEthSignedMessageHash();
     }
+
 
     /**
     * @dev Check signature and mint tokens
