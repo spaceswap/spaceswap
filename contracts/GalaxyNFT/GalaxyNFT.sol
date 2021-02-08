@@ -1632,7 +1632,7 @@ contract GalaxyNFT is Ownable, ERC1155Receiver {
     // The block number when MILK2 mining starts.
     uint256 public startBlock;
 
-    uint256 internal milkPerBlock = 100; // 1
+    uint256 internal milkPerBlock = 250; // 2.5
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
