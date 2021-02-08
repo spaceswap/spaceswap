@@ -4,13 +4,11 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/spaceswap/spaceswap.git"
-    
   },
   "files": [
     "contracts",
     "build"
   ],
-
   "dependencies": {
     "@uniswap/lib": "1.1.4",
     "@uniswap/v2-core": "1.0.1",
@@ -30,6 +28,7 @@
     "prettier": "^1.19.1",
     "rimraf": "^3.0.0",
     "solc": "0.6.12",
+    "solhint": "^3.3.2",
     "ts-node": "^8.5.4",
     "typescript": "^3.7.3"
   },
@@ -40,6 +39,7 @@
     "precompile": "yarn clean",
     "compile": "waffle .waffle.json",
     "pretest": "yarn compile",
+    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
     "test": "mocha --timeout 20000",
     "prepublishOnly": "yarn test"
   },
