@@ -665,9 +665,11 @@ contract ShadowStakingV2 is Ownable,  MultiplierMath {
     function setPoll(uint256 _poolPid, uint256 _newPoints) public onlyOwner {
         PoolInfo memory _poolInfo = poolInfo[_poolPid];
         uint256 _previousPoints = poolInfo[_poolPid].allocPointAmount;
-        _poolInfo.allocPointAmount = _newPoints;
+        
 
         totalPoints = totalPoints.sub(poolInfo[_poolPid].allocPointAmount).add(_newPoints);
+        _poolInfo.allocPointAmount = _newPoints;
+        
         emit PoolUpdate(_poolPid, _previousPoints, _newPoints);
     }
 
