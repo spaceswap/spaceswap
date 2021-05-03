@@ -1,5 +1,7 @@
 pragma solidity ^0.6.12;
 
+// SPDX-License-Identifier: MIT
+
 library ECDSA {
     /**
      * @dev Returns the address that signed a hashed message (`hash`) with
@@ -540,6 +542,14 @@ library SafeERC20 {
     }
 }
 
+interface IMilk2Token {
+
+    function transfer(address _to, uint256 _amount) external returns (bool);
+
+    function balanceOf(address _to) external returns (uint256);
+
+}
+
 contract MultiplierMath {
 
     function max(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -729,7 +739,7 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
 
     /**
-    * @dev Check signature and mint tokens
+    * @dev Check signature and transfer tokens
     * @param  _amount - subj
     * @param  _lastBlockNumber - subj
     * @param  _currentBlockNumber - subj
@@ -773,7 +783,7 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
 
     /**
-    * @dev Check signature and mint tokens
+    * @dev Check signature and transfer tokens
     * @param  _amount - subj
     * @param  _lastBlockNumber - subj
     * @param  _currentBlockNumber - subj
@@ -893,8 +903,8 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
 
     function emergencyRefund() public onlyOwner {
-        emit EmergencyRefund(msg.sender, milk.balanceOf(address.this));
-        milk.transfer(owner, milk.balanceOf(address.this));
+        emit EmergencyRefund(msg.sender, milk.balanceOf(address(this)));
+        milk.transfer(owner(), milk.balanceOf(address(this)));
     }
 
 }
