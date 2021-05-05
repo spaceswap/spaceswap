@@ -8,23 +8,15 @@
 
 [Interstelar](https://etherscan.io/address/0xb95ebbf2a9fc64e4dc4d6951a60bc4d3c8f55b9d#code)
 
-[Blender](https://etherscan.io/address/0x19b911d1bedcbe6ba3efc372f4ae69710426d85b#code)
-
 [BlenderV2](https://etherscan.io/address/0xfe3f277f0b2b4ab4a8e09583484a432af9cfd642#code)
 
 [TimeLock](https://etherscan.io/address/0xa17809ce669594dc13b0f218cad87e445bb4d770#code)
 
 [BlackHole](https://etherscan.io/address/0x4c3f2bcbd7b6dad6095ce8f8a3c23aff691a2b23#code)
 
-[ShadowStaking](https://etherscan.io/address/0xe3e17fa901591aeecdf0a928489b5362fce3c0ca#code)
-
-[ShadowStakingV2](https://etherscan.io/address/0x5d2af2e012f70b18723e44d0f3158c7939a1827e#code)
-
-[Gravity](https://etherscan.io/address/0x159BA6999C7602956d691A54CFaa93563EC8d16B#code)
+[ShadowStakingV2](https://etherscan.io/address/0x7f364003609004e83e96412a9d6f9794a91a5377#code)
 
 [GravityV2](https://etherscan.io/address/0xe6c87b72269dd9199639a6358a2cefb7caf89a0e#code)
-
-[Galaxy](https://etherscan.io/address/0xb780035440dba56f6cd7d2d522ee9f94f0d9f752#code)
 
 [NFT](https://etherscan.io/address/0x77ec5a5ecf2d3942d45cb059fa1c86a262ec855b#code)
 
