@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.6.12;
 
 /**
@@ -158,8 +157,6 @@ library SafeMath {
     }
 }
 
-
-
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
  */
@@ -237,7 +234,6 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-
 /**
  * @title Blender is exchange contract for MILK2 <=> SHAKE tokens
  *
@@ -246,7 +242,7 @@ interface IERC20 {
 contract Blender {
     using SafeMath for uint256;
 
-    uint256 public constant  SHAKE_PRICE_STEP = 10*10**18;  //MILK2
+    uint256 public constant  SHAKE_PRICE_STEP = 1e18;  //MILK2
 
     address public immutable MILK_ADDRESS;
     address public immutable SHAKE_ADDRESS;
@@ -270,7 +266,7 @@ contract Blender {
     {
         MILK_ADDRESS     = _milkAddress;
         SHAKE_ADDRESS    = _shakeAddress;
-        currShakePrice   = 9460*10**18; //MILK2
+        currShakePrice   = 7500*1e18; //MILK2 // 7500
         START_FROM_BLOCK = _startFromBlock;
         owner            = msg.sender;
         paused           = false;
