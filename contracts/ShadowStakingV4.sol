@@ -1,6 +1,6 @@
-pragma solidity ^0.6.12;
-
 // SPDX-License-Identifier: MIT
+
+pragma solidity ^0.6.12;
 
 library ECDSA {
     /**
@@ -568,6 +568,19 @@ contract MultiplierMath {
 
 }
 
+interface LastShadowContract {
+
+    function getRewards(address _user) external view returns(uint256);
+
+    function getTotalRewards(address _user) external view returns(uint256);
+
+    function getLastBlock(address _user) external view returns(uint256);
+
+    function getUsersCount() external view returns(uint256);
+
+    function getUser(uint256 _userId) external view returns(address);
+}
+
 contract ShadowStakingV4 is Ownable,  MultiplierMath {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -587,10 +600,16 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
     IMilk2Token public milk;
 
+    LastShadowContract public lastShadowContract;
+
     mapping (address => UserInfo) private userInfo;
     mapping (address => bool) public trustedSigner;
 
     address[] internal users;
+
+    address[] internal newUsers;
+
+    mapping (address => uint256) public newUsersId;
 
     PoolInfo[] private poolInfo;
 
@@ -606,24 +625,15 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
     event AddNewKey(bytes keyHash, uint256 id);
     event EmergencyRefund(address sender, uint256 amount);
 
-    constructor(IMilk2Token _milk, uint256[5] memory _epochs, uint256[5] memory _multipliers) public {
+    constructor(IMilk2Token _milk, uint256[5] memory _epochs, uint256[5] memory _multipliers, LastShadowContract _lastShadowContract) public {
         milk = _milk;
         epochs = _epochs;
         multipliers = _multipliers;
-
-        //For debug
-        trustedSigner[msg.sender]=true;
+        lastShadowContract = _lastShadowContract;
+        // users.length = lastShadowContract.getUsersCount();
     }
 
 
-    /**
-      * @dev Add a new lp to the pool.
-      *
-      * @param _lpToken - address of ERC-20 LP token
-       * @param _newPoints - share in the total amount of rewards
-      * DO NOT add the same LP token more than once. Rewards will be messed up if you do.
-      * Can only be called by the current owner.
-      */
     function addNewPool(IERC20 _lpToken, uint256 _newPoints) public onlyOwner {
         totalPoints = totalPoints.add(_newPoints);
         poolInfo.push(PoolInfo({lpToken: _lpToken, allocPointAmount: _newPoints, blockCreation:block.number}));
@@ -631,23 +641,12 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
     }
 
 
-    /**
-     * @dev Update lp address to the pool.
-     *
-     * @param _poolPid - number of pool
-     * @param _newPoints - new amount of allocation points
-     * DO NOT add the same LP token more than once. Rewards will be messed up if you do.
-     * Can only be called by the current owner.
-     */
     function setPoll(uint256 _poolPid, uint256 _newPoints) public onlyOwner {
         totalPoints = totalPoints.sub(poolInfo[_poolPid].allocPointAmount).add(_newPoints);
         poolInfo[_poolPid].allocPointAmount = _newPoints;
     }
 
 
-    /**
-    *@dev set address that can sign
-    */
     function setTrustedSigner(address _signer, bool _isValid) public onlyOwner {
         trustedSigner[_signer] = _isValid;
     }
@@ -660,47 +659,40 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
     }
 
 
-    /**
-      * @dev - return Number of keys
-      */
     function getPoolsCount() public view returns(uint256) {
         return poolInfo.length;
     }
 
 
-    /**
-      * @dev - return info about current user's reward
-      * @param _user - user's address
-      */
     function getRewards(address _user) public view returns(uint256) {
-        return  userInfo[_user].rewardDebt;
+        if (newUsersId[_user] == 0) { // если юзера нет среди новых обращаемся к старому
+            return  lastShadowContract.getRewards(_user);
+        } else {
+            return  userInfo[_user].rewardDebt; // иначе идем в новый
+        }
     }
 
 
-    /**
-      * @dev - return info about user's last block with update
-      *
-      * @param _user - user's address
-      */
     function getLastBlock(address _user) public view returns(uint256) {
-        return userInfo[_user].lastBlock;
+        if (newUsersId[_user] == 0) { // если юзера нет среди новых обращаемся к старому
+            return lastShadowContract.getLastBlock(_user);
+        } else {
+            return userInfo[_user].lastBlock; // иначе идем в новый
+        }
     }
 
 
-    /**
-    * @dev - return total allocation points
-    */
     function getTotalPoints() public view returns(uint256) {
         return totalPoints;
     }
 
 
     function registration() public {
-        require(userInfo[msg.sender].lastBlock == 0, "User already exist");
-        UserInfo storage _userInfo = userInfo[msg.sender];
-        _userInfo.rewardDebt = 0;
-        _userInfo.lastBlock = block.number;
-        users.push(msg.sender);
+        require(getLastBlock(msg.sender) == 0, "User already exist");
+
+        _registration(msg.sender, 0, block.number);
+
+
     }
 
 
@@ -746,18 +738,11 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
     * @param  _msgForSign - hash for sign with Ethereum style prefix!!!
     * @param  _signature  - signature
     */
-    function harvest(
-        uint256 _amount,
-        uint256 _lastBlockNumber,
-        uint256 _currentBlockNumber,
-        bytes32 _msgForSign,
-        bytes memory _signature)
-    public
-    {
+    function harvest(uint256 _amount, uint256 _lastBlockNumber, uint256 _currentBlockNumber, bytes32 _msgForSign, bytes memory _signature) public {
         require(_currentBlockNumber <= block.number, "currentBlockNumber cannot be larger than the last block");
 
         //Double spend check
-        require(userInfo[msg.sender].lastBlock == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
+        require(getLastBlock(msg.sender) == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
 
         //1. Lets check signer
         address signedBy = _msgForSign.recover(_signature);
@@ -773,6 +758,11 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
         require(actualMsg.toEthSignedMessageHash() == _msgForSign,"Integrety check failed!");
 
         //Actions
+
+         if (newUsersId[msg.sender] == 0) {
+            _registration(msg.sender, userInfo[msg.sender].rewardDebt, userInfo[msg.sender].lastBlock);
+         }
+
         userInfo[msg.sender].rewardDebt = userInfo[msg.sender].rewardDebt.add(_amount);
         userInfo[msg.sender].lastBlock = _currentBlockNumber;
         if (_amount > 0) {
@@ -782,80 +772,45 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
     }
 
 
-    /**
-    * @dev Check signature and transfer tokens
-    * @param  _amount - subj
-    * @param  _lastBlockNumber - subj
-    * @param  _currentBlockNumber - subj
-    * @param  _msgForSign - hash for sign with Ethereum style prefix!!!
-    * @param  _signature  - signature
-    */
-    function debug_harvest(
-        uint256 _amount,
-        uint256 _lastBlockNumber,
-        uint256 _currentBlockNumber,
-        bytes32 _msgForSign,
-        bytes memory _signature)
-    public view returns(address _signer, bytes32 _msg, bytes32 _prefixedMsg)
-    {
-        require(_currentBlockNumber <= block.number, "currentBlockNumber cannot be larger than the last block");
 
-        //Double spend check
-        require(userInfo[msg.sender].lastBlock == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
-
-        //1. Lets check signer
-        address signedBy = _msgForSign.recover(_signature);
-        //require(trustedSigner[signedBy] == true, "Signature check failed!");
-
-        //2. Check signed msg integrety
-        bytes32 actualMsg = getMsgForSign(
-            _amount,
-            _lastBlockNumber,
-            _currentBlockNumber,
-            msg.sender
-        );
-        return (signedBy, actualMsg, actualMsg.toEthSignedMessageHash());
-    }
-
-
-    /**
-     * @dev - return Number of users
-     */
     function getUsersCount() public view returns(uint256) {
-        return users.length;
+        return users.length.add(lastShadowContract.getUsersCount());
     }
 
 
-    /**
-     * @dev - return address of user
-     * @param - _userId - unique number of user in array
-     */
     function getUser(uint256 _userId) public view returns(address) {
-        return users[_userId];
+        if (_userId < lastShadowContract.getUsersCount()) {
+            return lastShadowContract.getUser(_userId); // идем в старый контракт
+        }
+        else {
+            return users[_userId];
+        }
     }
 
 
-    /**
-     * @dev - return total rewards
-     */
     function getTotalRewards(address _user) public view returns(uint256) {
-        return userInfo[_user].rewardDebt;
+        if (newUsersId[_user] == 0) { // если юзера нет среди новых обращаемся к старому
+            return lastShadowContract.getTotalRewards(_user);
+        }
+        else {
+            return userInfo[_user].rewardDebt;
+        }
     }
 
+    function _registration(address _user, uint256 _rewardDebt, uint256 _lastBlock) internal {
+        UserInfo storage _userInfo = userInfo[_user];
+        _userInfo.rewardDebt = _rewardDebt;
+        _userInfo.lastBlock = _lastBlock;
+        users.push(_user);
+        newUsers.push(_user); // 1
+        newUsersId[_user] = newUsers.length; // 1
+    }
 
-    /**
-    * @param - _id - multiplier's id (0-4)
-    * @dev - return value of multiplier
-    */
     function getValueMultiplier(uint256 _id) public view returns(uint256) {
         return multipliers[_id];
     }
 
 
-    /**
-    * @param - _id - epoch's id(0-4)
-    * @dev - return value of epoch
-    */
     function getValueEpoch(uint256 _id) public view returns(uint256) {
         return epochs[_id];
     }
@@ -908,3 +863,24 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
     }
 
 }
+
+/**
+    function massRegistration(address[] memory _users, uint256[] memory _debts, uint256 [] memory _lastBlocks) public onlyOwner {
+        require (_users.length == _debts.length && _users.length == _lastBlocks.length);
+
+        for (uint256 i = 0; i < _users.length; i++) {
+            UserInfo storage _userInfo = userInfo[_users[i]];
+            _userInfo.rewardDebt = _debts[i];
+            _userInfo.lastBlock = _lastBlocks[i];
+            users.push(_users[i]);
+        }
+    }
+    function addUserInPrevious(address _user, uint256 _debt, uint256 _lastBlock) public onlyOwner {
+        require(userInfo[_user].lastBlock == 0, "User already exist");
+        UserInfo storage _userInfo = userInfo[_user];
+        _userInfo.rewardDebt = _debt;
+        _userInfo.lastBlock = _lastBlock;
+        users.push(_user);
+    }
+
+*/
