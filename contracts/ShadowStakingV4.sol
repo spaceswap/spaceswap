@@ -607,8 +607,6 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
     address[] internal users;
 
-    address[] internal newUsers;
-
     mapping (address => uint256) public newUsersId;
 
     PoolInfo[] private poolInfo;
@@ -630,7 +628,6 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
         epochs = _epochs;
         multipliers = _multipliers;
         lastShadowContract = _lastShadowContract;
-        // users.length = lastShadowContract.getUsersCount();
     }
 
 
@@ -665,19 +662,19 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
 
     function getRewards(address _user) public view returns(uint256) {
-        if (newUsersId[_user] == 0) { // если юзера нет среди новых обращаемся к старому
+        if (newUsersId[_user] == 0) {
             return  lastShadowContract.getRewards(_user);
         } else {
-            return  userInfo[_user].rewardDebt; // иначе идем в новый
+            return  userInfo[_user].rewardDebt;
         }
     }
 
 
     function getLastBlock(address _user) public view returns(uint256) {
-        if (newUsersId[_user] == 0) { // если юзера нет среди новых обращаемся к старому
+        if (newUsersId[_user] == 0) {
             return lastShadowContract.getLastBlock(_user);
         } else {
-            return userInfo[_user].lastBlock; // иначе идем в новый
+            return userInfo[_user].lastBlock;
         }
     }
 
@@ -691,15 +688,10 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
         require(getLastBlock(msg.sender) == 0, "User already exist");
 
         _registration(msg.sender, 0, block.number);
-
-
     }
 
 
-    function getData(uint256 _amount,
-        uint256 _lastBlockNumber,
-        uint256 _currentBlockNumber,
-        address _sender) public pure returns(bytes32) {
+    function getData(uint256 _amount, uint256 _lastBlockNumber, uint256 _currentBlockNumber, address _sender) public pure returns(bytes32) {
         return sha256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber, _sender));
     }
 
@@ -709,12 +701,7 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
     /**
     *@dev Prepare abi encoded message
     */
-    function getMsgForSign(
-        uint256 _amount,
-        uint256 _lastBlockNumber,
-        uint256 _currentBlockNumber,
-        address _sender) public pure returns(bytes32)
-    {
+    function getMsgForSign(uint256 _amount, uint256 _lastBlockNumber, uint256 _currentBlockNumber, address _sender) public pure returns(bytes32) {
         return keccak256(abi.encode(_amount, _lastBlockNumber, _currentBlockNumber, _sender));
     }
 
@@ -759,9 +746,9 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
         //Actions
 
-         if (newUsersId[msg.sender] == 0) {
+        if (newUsersId[msg.sender] == 0) {
             _registration(msg.sender, userInfo[msg.sender].rewardDebt, userInfo[msg.sender].lastBlock);
-         }
+        }
 
         userInfo[msg.sender].rewardDebt = userInfo[msg.sender].rewardDebt.add(_amount);
         userInfo[msg.sender].lastBlock = _currentBlockNumber;
@@ -780,7 +767,7 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
     function getUser(uint256 _userId) public view returns(address) {
         if (_userId < lastShadowContract.getUsersCount()) {
-            return lastShadowContract.getUser(_userId); // идем в старый контракт
+            return lastShadowContract.getUser(_userId);
         }
         else {
             return users[_userId];
@@ -789,7 +776,7 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
 
     function getTotalRewards(address _user) public view returns(uint256) {
-        if (newUsersId[_user] == 0) { // если юзера нет среди новых обращаемся к старому
+        if (newUsersId[_user] == 0) {
             return lastShadowContract.getTotalRewards(_user);
         }
         else {
@@ -797,14 +784,15 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
         }
     }
 
+
     function _registration(address _user, uint256 _rewardDebt, uint256 _lastBlock) internal {
         UserInfo storage _userInfo = userInfo[_user];
         _userInfo.rewardDebt = _rewardDebt;
         _userInfo.lastBlock = _lastBlock;
         users.push(_user);
-        newUsers.push(_user); // 1
-        newUsersId[_user] = newUsers.length; // 1
+        newUsersId[_user] = users.length;
     }
+
 
     function getValueMultiplier(uint256 _id) public view returns(uint256) {
         return multipliers[_id];
@@ -863,24 +851,3 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
     }
 
 }
-
-/**
-    function massRegistration(address[] memory _users, uint256[] memory _debts, uint256 [] memory _lastBlocks) public onlyOwner {
-        require (_users.length == _debts.length && _users.length == _lastBlocks.length);
-
-        for (uint256 i = 0; i < _users.length; i++) {
-            UserInfo storage _userInfo = userInfo[_users[i]];
-            _userInfo.rewardDebt = _debts[i];
-            _userInfo.lastBlock = _lastBlocks[i];
-            users.push(_users[i]);
-        }
-    }
-    function addUserInPrevious(address _user, uint256 _debt, uint256 _lastBlock) public onlyOwner {
-        require(userInfo[_user].lastBlock == 0, "User already exist");
-        UserInfo storage _userInfo = userInfo[_user];
-        _userInfo.rewardDebt = _debt;
-        _userInfo.lastBlock = _lastBlock;
-        users.push(_user);
-    }
-
-*/
