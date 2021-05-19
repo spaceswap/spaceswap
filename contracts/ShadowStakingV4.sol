@@ -609,7 +609,7 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
     uint256 internal previousUsersCount;
 
-    mapping (address => uint256) public newUsersId;
+    mapping (address => uint256) internal newUsersId;
 
     PoolInfo[] private poolInfo;
 
@@ -769,11 +769,11 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
 
     function getUser(uint256 _userId) public view returns(address) {
-        if (_userId < lastShadowContract.getUsersCount()) {
+        if (_userId < previousUsersCount) {
             return lastShadowContract.getUser(_userId);
         }
         else {
-            return users[_userId];
+            return users[_userId.sub(previousUsersCount)];
         }
     }
 
