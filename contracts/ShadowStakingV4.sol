@@ -609,7 +609,7 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
 
     uint256 internal previousUsersCount;
 
-    mapping (address => uint256) internal newUsersId;
+    mapping (address => uint256) public newUsersId;
 
     PoolInfo[] private poolInfo;
 
@@ -731,6 +731,10 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
     function harvest(uint256 _amount, uint256 _lastBlockNumber, uint256 _currentBlockNumber, bytes32 _msgForSign, bytes memory _signature) public {
         require(_currentBlockNumber <= block.number, "currentBlockNumber cannot be larger than the last block");
 
+        if (newUsersId[msg.sender] == 0) {
+            _registration(msg.sender, getRewards(msg.sender), getLastBlock(msg.sender));
+        }
+
         //Double spend check
         require(getLastBlock(msg.sender) == _lastBlockNumber, "lastBlockNumber must be equal to the value in the storage");
 
@@ -748,10 +752,6 @@ contract ShadowStakingV4 is Ownable,  MultiplierMath {
         require(actualMsg.toEthSignedMessageHash() == _msgForSign,"Integrety check failed!");
 
         //Actions
-
-        if (newUsersId[msg.sender] == 0) {
-            _registration(msg.sender, userInfo[msg.sender].rewardDebt, userInfo[msg.sender].lastBlock);
-        }
 
         userInfo[msg.sender].rewardDebt = userInfo[msg.sender].rewardDebt.add(_amount);
         userInfo[msg.sender].lastBlock = _currentBlockNumber;
